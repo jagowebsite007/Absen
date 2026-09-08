@@ -479,6 +479,7 @@
         document.getElementById('viewLogin').classList.add('hidden');
         document.getElementById('viewUserDashboard').classList.remove('hidden');
         document.getElementById('userGreeting').innerText = "Hai, " + currentUser.nama;
+        document.getElementById('userRoleBadge').innerText = currentUser.role || "Guru";
         showToast("Login Berhasil!");
         startCamera();
       } else {
