@@ -1,6 +1,6 @@
 /**
  * ==========================================
- * Code.gs - Google Apps Script REST API Backend
+ * Code.gs - REST API Backend & Google Drive Storage
  * ==========================================
  */
 
@@ -21,30 +21,84 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, message: err.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ 
+      success: false, 
+      message: "Terjadi kesalahan server: " + err.toString() 
+    })).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
 function doGet(e) {
-  return ContentService.createTextOutput("REST API Absensi Aktif!");
+  return ContentService.createTextOutput("REST API Absensi Rajawali Aktif!");
 }
 
 function handleLogin(nama, pass) {
-  // Contoh logic login sederhana (Sesuaikan dengan Google Sheet Anda)
   if (nama && pass) {
     return {
       success: true,
-      user: { id: "GR01", nama: nama, role: "Guru" }
+      user: { id: nama, nama: nama, role: "Guru / Staf" }
     };
   }
-  return { success: false, message: "Username/Password Salah" };
+  return { success: false, message: "Nama Pengguna dan Password harus diisi!" };
 }
 
 function handleSubmitAttendance(userId, tipe, selfieData, coords) {
-  // Simpan foto ke Google Drive & data ke Google Sheet di sini
-  return {
-    success: true,
-    message: "Absensi " + tipe + " berhasil dicatat!"
-  };
+  try {
+    if (!selfieData) {
+      return { success: false, message: "Foto selfie tidak ditemukan!" };
+    }
+
+    // Format Tanggal WIT
+    var now = new Date();
+    var timeFormatted = Utilities.formatDate(now, CONFIG.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
+    var dateFileFormatted = Utilities.formatDate(now, CONFIG.TIMEZONE, "yyyyMMdd_HHmmss");
+
+    // 1. UBAH BASE64 GAMBAR & SIMPAN KE GOOGLE DRIVE
+    var folder = DriveApp.getFolderById(CONFIG.FOLDER_ID);
+    
+    // Hapus header data URL (misal: "data:image/jpeg;base64,") jika ada
+    var cleanBase64 = selfieData.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
+    var imageBytes = Utilities.base64Decode(cleanBase64);
+    
+    // Nama file foto di Drive (Contoh: ABSEN_Check-In_Ahmad_20260908_180000.jpg)
+    var fileName = "ABSEN_" + tipe + "_" + userId + "_" + dateFileFormatted + ".jpg";
+    var blob = Utilities.newBlob(imageBytes, "image/jpeg", fileName);
+    
+    // Buat file di Google Drive
+    var driveFile = folder.createFile(blob);
+    // Atur akses agar foto bisa dilihat lewat link
+    driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    var photoUrl = driveFile.getUrl();
+
+    // 2. MENCATAT DATA ABSENSI KE GOOGLE SPREADSHEET
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("Absensi");
+    
+    // Jika sheet belum ada, jalankan setup otomatis
+    if (!sheet) {
+      initialSetup();
+      sheet = ss.getSheetByName("Absensi");
+    }
+
+    // Tambah Baris Baru
+    sheet.appendRow([
+      timeFormatted,  // Waktu
+      userId,         // Nama / User ID
+      tipe,           // Check-In / Check-Out
+      coords || "-",  // GPS Coordinates
+      photoUrl        // Link Foto Drive
+    ]);
+
+    return {
+      success: true,
+      message: "Absensi " + tipe + " Berhasil! Foto tersimpan di Google Drive.",
+      photoUrl: photoUrl
+    };
+
+  } catch (err) {
+    return {
+      success: false,
+      message: "Gagal menyimpan absensi: " + err.message
+    };
+  }
 }
