@@ -44,10 +44,14 @@ function handleLogin(nama, pass) {
     var sheet = ss.getSheetByName("User");
 
     if (!sheet) {
-      return { success: false, message: "Sheet 'User' belum ditemukan! Jalankan initialSetup() di setup.gs." };
+      return { success: false, message: "Sheet 'User' belum ditemukan! Jalankan tesOtorisasiDrive() / initialSetup() di setup.gs." };
     }
 
     var data = sheet.getDataRange().getValues();
+    if (data.length <= 1) {
+      return { success: false, message: "Database pengguna kosong! Harap tambahkan baris pengguna pada Sheet 'User'." };
+    }
+
     // Baris 0 adalah Header (Nama, Password, Role)
     for (var i = 1; i < data.length; i++) {
       var sheetNama = String(data[i][0]).trim();
