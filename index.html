@@ -277,6 +277,110 @@
       font-weight: 700;
     }
     .badge-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+    .badge-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+    /* Style Tambahan untuk Panel Admin & Tabel */
+    .admin-nav {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .btn-tab {
+      flex: 1;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #9ca3af;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn-tab.active {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: #ffffff;
+      border-color: transparent;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .stat-card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 8px;
+      border-radius: 14px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #818cf8;
+    }
+    .stat-label {
+      font-size: 10px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      max-height: 280px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      text-align: left;
+    }
+    .data-table th {
+      background: rgba(15, 23, 42, 0.9);
+      color: #818cf8;
+      padding: 10px;
+      position: sticky;
+      top: 0;
+      font-weight: 700;
+    }
+    .data-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #e5e7eb;
+      white-space: nowrap;
+    }
+    .data-table tr:hover {
+      background: rgba(99, 102, 241, 0.08);
+    }
+
+    .btn-download {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      font-weight: 700;
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 12px;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    }
 
     .hidden { display: none !important; }
   </style>
@@ -332,32 +436,116 @@
         <button onclick="logout()" class="btn-secondary">Keluar</button>
       </div>
 
-      <!-- Live Clock & Camera -->
-      <div class="bento-card">
-        <div class="clock-widget">
-          <div class="clock-title">Waktu Real-Time (WIT)</div>
-          <div id="liveClockDisplay" class="clock-time">--:--:-- WIT</div>
-        </div>
+      <!-- Tab Navigasi Admin (Hanya muncul jika Role = Admin / Kepala Sekolah) -->
+      <div id="adminNavTab" class="admin-nav hidden">
+        <button id="btnTabSelfie" onclick="switchTab('selfie')" class="btn-tab active">📷 Absen Selfie</button>
+        <button id="btnTabAdmin" onclick="switchTab('admin')" class="btn-tab">📊 Rekap & Filter Admin</button>
+      </div>
 
-        <div class="camera-box">
-          <video id="webcam" autoplay playsinline muted></video>
-          <img id="selfiePreview" src="" class="hidden">
-        </div>
+      <!-- TAB 1: Live Clock & Camera Selfie -->
+      <div id="sectionSelfie">
+        <div class="bento-card">
+          <div class="clock-widget">
+            <div class="clock-title">Waktu Real-Time (WIT)</div>
+            <div id="liveClockDisplay" class="clock-time">--:--:-- WIT</div>
+          </div>
 
-        <div style="display: flex; gap: 6px; margin-bottom: 10px;">
-          <button type="button" onclick="startCamera()" class="btn-secondary" style="flex: 1;">📷 Aktifkan Kamera</button>
-          <button type="button" onclick="takeSnap()" class="btn-secondary" style="flex: 1; background: rgba(99,102,241,0.2); color: #818cf8;">📸 Ambil Selfie</button>
-        </div>
+          <div class="camera-box">
+            <video id="webcam" autoplay playsinline muted></video>
+            <img id="selfiePreview" src="" class="hidden">
+          </div>
 
-        <div style="font-size: 11px; color: #9ca3af; margin-bottom: 12px;">
-          <strong>GPS:</strong> <span id="gpsStatus">Mendeteksi...</span>
-        </div>
+          <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+            <button type="button" onclick="startCamera()" class="btn-secondary" style="flex: 1;">📷 Aktifkan Kamera</button>
+            <button type="button" onclick="takeSnap()" class="btn-secondary" style="flex: 1; background: rgba(99,102,241,0.2); color: #818cf8;">📸 Ambil Selfie</button>
+          </div>
 
-        <div style="display: flex; gap: 8px;">
-          <button onclick="doAttendance('Check-In')" class="btn-primary" style="flex: 1;">Check-In</button>
-          <button onclick="doAttendance('Check-Out')" class="btn-primary" style="flex: 1; background: #334155;">Check-Out</button>
+          <div style="font-size: 11px; color: #9ca3af; margin-bottom: 12px;">
+            <strong>GPS:</strong> <span id="gpsStatus">Mendeteksi...</span>
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <button onclick="doAttendance('Check-In')" class="btn-primary" style="flex: 1;">Check-In</button>
+            <button onclick="doAttendance('Check-Out')" class="btn-primary" style="flex: 1; background: #334155;">Check-Out</button>
+          </div>
         </div>
       </div>
+
+      <!-- TAB 2: PANEL REKAP ADMIN -->
+      <div id="sectionAdmin" class="hidden">
+        <div class="bento-card">
+          <h3 style="font-size: 14px; font-weight: 800; margin-bottom: 12px; color: #818cf8;">🔍 Filter Kehadiran Guru & Staf</h3>
+          
+          <div class="filter-grid">
+            <div>
+              <label style="font-size: 10px; color: #9ca3af; display: block; margin-bottom: 4px;">Dari Tanggal</label>
+              <input type="date" id="filterStartDate" class="form-control" style="padding: 8px;" onchange="applyAdminFilter()">
+            </div>
+            <div>
+              <label style="font-size: 10px; color: #9ca3af; display: block; margin-bottom: 4px;">Sampai Tanggal</label>
+              <input type="date" id="filterEndDate" class="form-control" style="padding: 8px;" onchange="applyAdminFilter()">
+            </div>
+          </div>
+
+          <div class="filter-grid">
+            <div>
+              <label style="font-size: 10px; color: #9ca3af; display: block; margin-bottom: 4px;">Nama Pengguna</label>
+              <select id="filterNama" class="form-control" style="padding: 8px;" onchange="applyAdminFilter()">
+                <option value="ALL">Semua Nama</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 10px; color: #9ca3af; display: block; margin-bottom: 4px;">Tipe Absen</label>
+              <select id="filterTipe" class="form-control" style="padding: 8px;" onchange="applyAdminFilter()">
+                <option value="ALL">Semua Tipe</option>
+                <option value="Check-In">Check-In</option>
+                <option value="Check-Out">Check-Out</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Summary Stats -->
+          <div class="stat-card-grid">
+            <div class="stat-card">
+              <div id="statTotal" class="stat-value">0</div>
+              <div class="stat-label">Total Absen</div>
+            </div>
+            <div class="stat-card">
+              <div id="statCheckIn" class="stat-value" style="color: #34d399;">0</div>
+              <div class="stat-label">Check-In</div>
+            </div>
+            <div class="stat-card">
+              <div id="statCheckOut" class="stat-value" style="color: #f43f5e;">0</div>
+              <div class="stat-label">Check-Out</div>
+            </div>
+          </div>
+
+          <!-- Tabel Data Absensi -->
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Waktu (WIT)</th>
+                  <th>Nama</th>
+                  <th>Tipe</th>
+                  <th>Foto</th>
+                </tr>
+              </thead>
+              <tbody id="adminTableBody">
+                <tr>
+                  <td colspan="4" style="text-align: center; color: #9ca3af;">Memuat data...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Tombol Download CSV -->
+          <button onclick="downloadCsvReport()" class="btn-download">
+            📥 Download Laporan Kehadiran (CSV/Excel)
+          </button>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -370,6 +558,8 @@
   var currentCoords = "";
   var selfieData = "";
   var mediaStreamTrack = null;
+  var rawAttendanceData = [];
+  var filteredAttendanceData = [];
 
   // Load URL API dari localStorage jika tersimpan
   window.onload = function() {
@@ -403,7 +593,7 @@
     }
   }
 
-  /* Kamera Langsung dari GitHub Pages (100% Bekerja karena bukan iframe!) */
+  /* Kamera Langsung dari GitHub Pages */
   function startCamera() {
     var video = document.getElementById('webcam');
     video.classList.remove('hidden');
@@ -479,13 +669,185 @@
         document.getElementById('viewLogin').classList.add('hidden');
         document.getElementById('viewUserDashboard').classList.remove('hidden');
         document.getElementById('userGreeting').innerText = "Hai, " + currentUser.nama;
-        document.getElementById('userRoleBadge').innerText = currentUser.role || "Guru";
+        
+        var userRole = currentUser.role || "Guru";
+        document.getElementById('userRoleBadge').innerText = userRole;
+
+        // Cek jika user adalah Admin / Kepala Sekolah
+        var isAdmin = userRole.toLowerCase().includes("admin") || userRole.toLowerCase().includes("kepala");
+        if (isAdmin) {
+          document.getElementById('userRoleBadge').className = "badge-status badge-purple";
+          document.getElementById('adminNavTab').classList.remove('hidden');
+          loadAdminData(); // Pre-load data rekap
+        } else {
+          document.getElementById('userRoleBadge').className = "badge-status badge-green";
+          document.getElementById('adminNavTab').classList.add('hidden');
+        }
+
         showToast("Login Berhasil!");
         startCamera();
       } else {
         showToast(res.message || "Login Gagal!");
       }
     });
+  }
+
+  /* Switch Tab antara Selfie & Panel Admin */
+  function switchTab(tab) {
+    var btnSelfie = document.getElementById('btnTabSelfie');
+    var btnAdmin = document.getElementById('btnTabAdmin');
+    var secSelfie = document.getElementById('sectionSelfie');
+    var secAdmin = document.getElementById('sectionAdmin');
+
+    if (tab === 'selfie') {
+      btnSelfie.classList.add('active');
+      btnAdmin.classList.remove('active');
+      secSelfie.classList.remove('hidden');
+      secAdmin.classList.add('hidden');
+      startCamera();
+    } else {
+      btnAdmin.classList.add('active');
+      btnSelfie.classList.remove('active');
+      secAdmin.classList.remove('hidden');
+      secSelfie.classList.add('hidden');
+      if (mediaStreamTrack) {
+        mediaStreamTrack.getTracks().forEach(function(t) { t.stop(); });
+      }
+      loadAdminData();
+    }
+  }
+
+  /* Fungsi Admin: Ambil Data Absensi */
+  function loadAdminData() {
+    callGasApi("getAttendanceData", {}, function(res) {
+      if (res.success) {
+        rawAttendanceData = res.data || [];
+        populateNamaDropdown(rawAttendanceData);
+        applyAdminFilter();
+        showToast("Data Rekap Diperbarui!");
+      } else {
+        showToast(res.message || "Gagal memuat rekap");
+      }
+    });
+  }
+
+  /* Isikan Dropdown Nama Guru secara Otomatis */
+  function populateNamaDropdown(data) {
+    var selectNama = document.getElementById('filterNama');
+    var uniqueNames = [];
+    data.forEach(function(item) {
+      if (item.nama && !uniqueNames.includes(item.nama)) {
+        uniqueNames.push(item.nama);
+      }
+    });
+
+    var currentSelected = selectNama.value;
+    selectNama.innerHTML = '<option value="ALL">Semua Nama</option>';
+    uniqueNames.forEach(function(nama) {
+      var opt = document.createElement('option');
+      opt.value = nama;
+      opt.innerText = nama;
+      selectNama.appendChild(opt);
+    });
+    selectNama.value = currentSelected || "ALL";
+  }
+
+  /* Filter Data Kehadiran berdasarkan Input Admin */
+  function applyAdminFilter() {
+    var startDate = document.getElementById('filterStartDate').value;
+    var endDate = document.getElementById('filterEndDate').value;
+    var selectedNama = document.getElementById('filterNama').value;
+    var selectedTipe = document.getElementById('filterTipe').value;
+
+    filteredAttendanceData = rawAttendanceData.filter(function(row) {
+      var matchDate = true;
+      var matchNama = true;
+      var matchTipe = true;
+
+      // Extract Tanggal YYYY-MM-DD dari string waktu "YYYY-MM-DD HH:mm:ss"
+      var rowDateStr = row.waktu ? row.waktu.split(" ")[0] : "";
+
+      if (startDate && rowDateStr < startDate) matchDate = false;
+      if (endDate && rowDateStr > endDate) matchDate = false;
+      if (selectedNama !== "ALL" && row.nama !== selectedNama) matchNama = false;
+      if (selectedTipe !== "ALL" && row.tipe !== selectedTipe) matchTipe = false;
+
+      return matchDate && matchNama && matchTipe;
+    });
+
+    renderAdminTable(filteredAttendanceData);
+  }
+
+  /* Tampilkan Data ke Tabel HTML & Hitung Ringkasan */
+  function renderAdminTable(data) {
+    var tbody = document.getElementById('adminTableBody');
+    tbody.innerHTML = "";
+
+    var countCheckIn = 0;
+    var countCheckOut = 0;
+
+    if (data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #9ca3af;">Tidak ada data sesuai filter.</td></tr>';
+    } else {
+      data.forEach(function(row) {
+        if (row.tipe === "Check-In") countCheckIn++;
+        if (row.tipe === "Check-Out") countCheckOut++;
+
+        var tr = document.createElement('tr');
+        var fotoCell = row.fotoUrl && row.fotoUrl.startsWith("http")
+          ? `<a href="${row.fotoUrl}" target="_blank" style="color: #818cf8; text-decoration: underline;">Lihat Foto</a>`
+          : `-`;
+
+        tr.innerHTML = `
+          <td>${row.waktu}</td>
+          <td><strong>${row.nama}</strong></td>
+          <td><span class="badge-status ${row.tipe === 'Check-In' ? 'badge-green' : 'badge-purple'}">${row.tipe}</span></td>
+          <td>${fotoCell}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById('statTotal').innerText = data.length;
+    document.getElementById('statCheckIn').innerText = countCheckIn;
+    document.getElementById('statCheckOut').innerText = countCheckOut;
+  }
+
+  /* Export / Download Data Kehadiran ke File CSV (Bisa Dibuka di Excel) */
+  function downloadCsvReport() {
+    if (filteredAttendanceData.length === 0) {
+      showToast("Tidak ada data untuk diunduh!");
+      return;
+    }
+
+    var csvRows = [];
+    // Header CSV
+    csvRows.push(["Tanggal & Waktu (WIT)", "Nama Pengguna", "Tipe Absen", "Koordinat GPS", "Link Foto Drive"]);
+
+    // Baris Data
+    filteredAttendanceData.forEach(function(row) {
+      csvRows.push([
+        `"${row.waktu}"`,
+        `"${row.nama}"`,
+        `"${row.tipe}"`,
+        `"${row.gps}"`,
+        `"${row.fotoUrl}"`
+      ]);
+    });
+
+    var csvContent = "\uFEFF" + csvRows.map(e => e.join(",")).join("\n");
+    var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    
+    var a = document.createElement('a');
+    var filename = "Rekap_Kehadiran_Rajawali_" + new Date().toISOString().slice(0, 10) + ".csv";
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    showToast("File Laporan Kehadiran Berhasil Diunduh!");
   }
 
   function doAttendance(tipe) {
