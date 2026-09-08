@@ -610,6 +610,16 @@
     initClock();
   };
 
+  // Helper untuk mengambil dan menyimpan URL Web App GAS secara otomatis
+  function getApiUrl() {
+    var urlInput = document.getElementById('gasApiUrl');
+    var url = urlInput ? urlInput.value.trim() : "";
+    if (url) {
+      localStorage.setItem('gas_api_url', url);
+    }
+    return url;
+  }
+
   function handleLogin(e) {
     e.preventDefault();
     var nama = document.getElementById('loginNama').value;
@@ -629,7 +639,7 @@
         document.getElementById('userRoleBadge').innerText = userRole;
 
         // VERIFIKASI ROLE ADMIN: HANYA ADMIN YANG DAPAT MELIHAT/MENGAKSES PANEL REKAPITULASI
-        var isAdmin = userRole.toLowerCase().includes("admin");
+        var isAdmin = userRole.toLowerCase().includes("admin") || userRole.toLowerCase().includes("kepala");
         var banner = document.getElementById('portalBanner');
         var roleTitle = document.getElementById('portalRoleTitle');
 
@@ -642,7 +652,7 @@
           document.getElementById('adminNavTab').classList.remove('hidden');
           switchTab('admin'); // Langsung buka Rekap Durasi untuk Admin
         } else {
-          // Tampilan Khusus Guru / Staf (Panel Rekap Admin Sama Sekali Tidak Ditampilkan)
+          // Tampilan Khusus Guru / Staf
           banner.className = "portal-banner banner-guru";
           roleTitle.innerText = "PORTAL PRESENSI GURU";
           roleTitle.style.color = "#34d399";
