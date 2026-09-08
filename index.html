@@ -491,17 +491,17 @@
           </div>
 
           <div style="display: flex; gap: 8px;">
-            <button onclick="doAttendance('Check-In')" class="btn-primary" style="flex: 1;">Check-In</button>
-            <button onclick="doAttendance('Check-Out')" class="btn-primary" style="flex: 1; background: #334155;">Check-Out</button>
+            <button id="btnCheckIn" onclick="doAttendance('Check-In')" class="btn-primary" style="flex: 1;">Check-In</button>
+            <button id="btnCheckOut" onclick="doAttendance('Check-Out')" class="btn-primary" style="flex: 1; background: #334155;">Check-Out</button>
           </div>
         </div>
       </div>
 
-      <!-- TAB 2: PANEL REKAP ADMIN & DURASI KERJA GURU -->
+      <!-- TAB 2: PANEL REKAP ADMIN & DURASI KERJA GURU (HANYA UNTUK ROLE ADMIN) -->
       <div id="sectionAdmin" class="hidden">
         <div class="bento-card">
-          <h3 style="font-size: 14px; font-weight: 800; margin-bottom: 4px; color: #c084fc;">⏱️ Monitoring Jam & Durasi Kerja Guru</h3>
-          <p style="font-size: 11px; color: #9ca3af; margin-bottom: 14px;">Merekap otomatis jam Check-In, Check-Out, dan durasi kehadiran.</p>
+          <h3 style="font-size: 14px; font-weight: 800; margin-bottom: 4px; color: #c084fc;">⏱️ Monitoring Kehadiran Guru & Staf (Khusus Admin)</h3>
+          <p style="font-size: 11px; color: #9ca3af; margin-bottom: 14px;">Merekap jam Check-In, Check-Out, dan durasi kehadiran.</p>
           
           <div class="filter-grid">
             <div>
@@ -568,9 +568,9 @@
             </table>
           </div>
 
-          <!-- Tombol Download CSV -->
-          <button onclick="downloadCsvReport()" class="btn-download">
-            📥 Download Laporan Durasi Guru (CSV/Excel)
+          <!-- Tombol Export PDF Khusus Admin -->
+          <button onclick="downloadPdfReport()" class="btn-download" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);">
+            📄 Export Laporan Kehadiran Guru (PDF)
           </button>
         </div>
       </div>
@@ -590,6 +590,17 @@
   var rawAttendanceData = [];
   var processedSummaryData = [];
   var filteredSummaryData = [];
+  
+  // Konfigurasi Lokasi GPS & Radius Maksimal 20M
+  var schoolConfig = {
+    lat: -2.53871,
+    lng: 140.70123,
+    maxRadius: 20
+  };
+  var currentDistanceMeters = null;
+  
+  // Status Absensi Hari Ini
+  var todayStatus = { hasCheckedIn: false, hasCheckedOut: false };
 
   // Load URL API dari localStorage jika tersimpan
   window.onload = function() {
@@ -607,6 +618,9 @@
     callGasApi("login", { nama: nama, pass: pass }, function(res) {
       if (res.success) {
         currentUser = res.user;
+        if (res.schoolConfig) schoolConfig = res.schoolConfig;
+        if (res.todayStatus) todayStatus = res.todayStatus;
+
         document.getElementById('viewLogin').classList.add('hidden');
         document.getElementById('viewUserDashboard').classList.remove('hidden');
         document.getElementById('userGreeting').innerText = "Hai, " + currentUser.nama;
@@ -614,8 +628,8 @@
         var userRole = currentUser.role || "Guru";
         document.getElementById('userRoleBadge').innerText = userRole;
 
-        // Cek jika user adalah Admin / Kepala Sekolah
-        var isAdmin = userRole.toLowerCase().includes("admin") || userRole.toLowerCase().includes("kepala");
+        // VERIFIKASI ROLE ADMIN: HANYA ADMIN YANG DAPAT MELIHAT/MENGAKSES PANEL REKAPITULASI
+        var isAdmin = userRole.toLowerCase().includes("admin");
         var banner = document.getElementById('portalBanner');
         var roleTitle = document.getElementById('portalRoleTitle');
 
@@ -628,7 +642,7 @@
           document.getElementById('adminNavTab').classList.remove('hidden');
           switchTab('admin'); // Langsung buka Rekap Durasi untuk Admin
         } else {
-          // Tampilan Khusus Guru / Staf
+          // Tampilan Khusus Guru / Staf (Panel Rekap Admin Sama Sekali Tidak Ditampilkan)
           banner.className = "portal-banner banner-guru";
           roleTitle.innerText = "PORTAL PRESENSI GURU";
           roleTitle.style.color = "#34d399";
@@ -637,9 +651,251 @@
           switchTab('selfie'); // Langsung buka Kamera Absen untuk Guru
         }
 
+        updateAttendanceButtons();
         showToast("Login Berhasil!");
       } else {
         showToast(res.message || "Login Gagal!");
+      }
+    });
+  }
+
+  function updateAttendanceButtons() {
+    var btnIn = document.getElementById('btnCheckIn');
+    var btnOut = document.getElementById('btnCheckOut');
+
+    if (btnIn) {
+      if (todayStatus.hasCheckedIn) {
+        btnIn.disabled = true;
+        btnIn.style.opacity = "0.5";
+        btnIn.innerText = "Check-In (Sudah)";
+      } else {
+        btnIn.disabled = false;
+        btnIn.style.opacity = "1";
+        btnIn.innerText = "Check-In";
+      }
+    }
+
+    if (btnOut) {
+      if (todayStatus.hasCheckedOut) {
+        btnOut.disabled = true;
+        btnOut.style.opacity = "0.5";
+        btnOut.innerText = "Check-Out (Sudah)";
+      } else {
+        btnOut.disabled = false;
+        btnOut.style.opacity = "1";
+        btnOut.innerText = "Check-Out";
+      }
+    }
+  }
+
+  function switchTab(tab) {
+    var btnSelfie = document.getElementById('btnTabSelfie');
+    var btnAdmin = document.getElementById('btnTabAdmin');
+    var secSelfie = document.getElementById('sectionSelfie');
+    var secAdmin = document.getElementById('sectionAdmin');
+
+    var userRole = currentUser ? currentUser.role : "Guru";
+    var isAdmin = userRole.toLowerCase().includes("admin");
+
+    if (tab === 'admin' && !isAdmin) {
+      showToast("Akses Ditolak! Hanya role Admin yang bisa melihat data rekapitulasi.");
+      return;
+    }
+
+    if (tab === 'selfie') {
+      if (btnSelfie) btnSelfie.classList.add('active');
+      if (btnAdmin) btnAdmin.classList.remove('active');
+      secSelfie.classList.remove('hidden');
+      secAdmin.classList.add('hidden');
+      startCamera();
+    } else {
+      if (btnAdmin) btnAdmin.classList.add('active');
+      if (btnSelfie) btnSelfie.classList.remove('active');
+      secAdmin.classList.remove('hidden');
+      secSelfie.classList.add('hidden');
+      if (mediaStreamTrack) {
+        mediaStreamTrack.getTracks().forEach(function(t) { t.stop(); });
+      }
+      loadAdminData();
+    }
+  }
+
+  function downloadPdfReport() {
+    var userRole = currentUser ? currentUser.role : "Guru";
+    if (!userRole.toLowerCase().includes("admin")) {
+      showToast("Akses Ditolak! Hanya Admin yang dapat mengekspor laporan.");
+      return;
+    }
+
+    if (filteredSummaryData.length === 0) {
+      showToast("Tidak ada data untuk diekspor ke PDF!");
+      return;
+    }
+
+    var printWindow = window.open('', '_blank');
+    var startDate = document.getElementById('filterStartDate').value || 'Semua Tanggal';
+    var endDate = document.getElementById('filterEndDate').value || 'Semua Tanggal';
+
+    var rowsHtml = '';
+    filteredSummaryData.forEach(function(row, idx) {
+      rowsHtml += `
+        <tr>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${idx + 1}</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px;">${row.tanggal}</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px;"><strong>${row.nama}</strong></td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #059669; font-weight: bold;">${row.checkIn}</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #dc2626; font-weight: bold;">${row.checkOut}</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; font-weight: bold; color: #4f46e5;">${row.durasi}</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${row.status}</td>
+        </tr>
+      `;
+    });
+
+    var htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Laporan Kehadiran Guru Sekolah Rajawali</title>
+        <style>
+          body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; margin: 20px; color: #0f172a; }
+          .header { text-align: center; margin-bottom: 20px; border-bottom: 3px solid #6366f1; padding-bottom: 12px; }
+          .header h1 { margin: 0; font-size: 22px; color: #4f46e5; text-transform: uppercase; letter-spacing: 1px; }
+          .header p { margin: 4px 0 0 0; font-size: 13px; color: #64748b; font-weight: bold; }
+          .meta { margin-bottom: 15px; font-size: 12px; display: flex; justify-content: space-between; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+          table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+          th { background-color: #4f46e5; color: white; border: 1px solid #3730a3; padding: 10px; text-align: center; font-weight: bold; text-transform: uppercase; }
+          .footer { margin-top: 30px; text-align: right; font-size: 11px; color: #64748b; }
+          @media print {
+            body { margin: 0; }
+            @page { size: A4 portrait; margin: 12mm; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>SEKOLAH RAJAWALI</h1>
+          <p>LAPORAN REKAPITULASI KEHADIRAN & DURASI KERJA GURU / STAF</p>
+        </div>
+        <div class="meta">
+          <div><strong>Periode Filter:</strong> ${startDate} s/d ${endDate}</div>
+          <div><strong>Tanggal Cetak:</strong> ${new Date().toLocaleString('id-ID')} WIT</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Tanggal</th>
+              <th>Nama Guru / Staf</th>
+              <th>Jam Check-In</th>
+              <th>Jam Check-Out</th>
+              <th>Durasi Kehadiran</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+        <div class="footer">
+          <p>Laporan Resmi Disetujui Oleh Sistem Absensi Rajawali</p>
+        </div>
+        <script>
+          window.onload = function() {
+            window.print();
+          };
+        <\/script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  }
+
+  function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+    var R = 6371000; // Radius bumi dalam meter
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  function initGeolocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(function(pos) {
+        var userLat = pos.coords.latitude;
+        var userLng = pos.coords.longitude;
+        currentCoords = userLat.toFixed(6) + "," + userLng.toFixed(6);
+
+        currentDistanceMeters = calculateHaversineDistance(userLat, userLng, schoolConfig.lat, schoolConfig.lng);
+        var roundedDist = Math.round(currentDistanceMeters);
+        var gpsElement = document.getElementById('gpsStatus');
+
+        if (currentDistanceMeters <= schoolConfig.maxRadius) {
+          gpsElement.innerHTML = `<span style="color: #34d399; font-weight: bold;">📍 Terkunci (${roundedDist}m dari sekolah) - Di Dalam Radius</span>`;
+        } else {
+          gpsElement.innerHTML = `<span style="color: #f87171; font-weight: bold;">⚠️ Di Luar Area (${roundedDist}m dari sekolah) - Maks ${schoolConfig.maxRadius}m!</span>`;
+        }
+      }, function(err) {
+        document.getElementById('gpsStatus').innerText = "Gagal mengambil lokasi GPS: " + err.message;
+      }, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      });
+    } else {
+      document.getElementById('gpsStatus').innerText = "Browser tidak mendukung Geolocation";
+    }
+  }
+
+  function doAttendance(tipe) {
+    // 1. Cek Siklus Absen Hari Ini (Hanya Boleh 1x Check-In & 1x Check-Out)
+    if (tipe === "Check-In" && todayStatus.hasCheckedIn) {
+      showToast("Gagal: Anda sudah melakukan Check-In untuk hari ini!");
+      return;
+    }
+    if (tipe === "Check-Out" && todayStatus.hasCheckedOut) {
+      showToast("Gagal: Anda sudah melakukan Check-Out untuk hari ini!");
+      return;
+    }
+
+    // 2. Cek Selfie Wajib Sebelum Check-In / Check-Out
+    if (!selfieData) {
+      showToast("Wajib mengambil foto selfie terlebih dahulu sebelum absen!");
+      return;
+    }
+
+    // 3. Cek Radius Lokasi GPS Tidak Boleh > 20 Meter
+    if (currentDistanceMeters === null) {
+      showToast("Gagal: Lokasi GPS belum terdeteksi!");
+      return;
+    }
+    if (currentDistanceMeters > schoolConfig.maxRadius) {
+      showToast("Gagal: Anda berada di luar area sekolah (" + Math.round(currentDistanceMeters) + " meter). Radius maksimal " + schoolConfig.maxRadius + " meter!");
+      return;
+    }
+
+    callGasApi("submitAttendance", {
+      userId: currentUser.id,
+      tipe: tipe,
+      selfieData: selfieData,
+      coords: currentCoords
+    }, function(res) {
+      if (res.success) {
+        showToast(res.message);
+        if (res.todayStatus) {
+          todayStatus = res.todayStatus;
+          updateAttendanceButtons();
+        }
+        // Reset Foto Selfie setelah sukses
+        selfieData = "";
+        document.getElementById('selfiePreview').classList.add('hidden');
+        document.getElementById('webcam').classList.remove('hidden');
+      } else {
+        showToast(res.message);
       }
     });
   }
