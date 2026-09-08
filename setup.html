@@ -14,30 +14,69 @@ const CONFIG = {
 };
 
 /**
+ * JALANKAN FUNGSI INI DENGAN MENEKAN TOMBOL "RUN" / "JALANKAN" DI APPS SCRIPT
+ * Fungsi ini khusus memicu Pop-Up Izin Otorisasi Google Drive & Spreadsheet.
+ */
+function tesOtorisasiDrive() {
+  try {
+    // 1. Tes Akses Google Drive
+    var folder = DriveApp.getFolderById(CONFIG.FOLDER_ID);
+    Logger.log("✅ Izin Google Drive BERHASIL! Nama Folder: " + folder.getName());
+    
+    // 2. Tes Akses Google Sheet
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    Logger.log("✅ Izin Google Sheet BERHASIL! Nama Sheet: " + ss.getName());
+    
+    // Jalankan setup header
+    initialSetup();
+  } catch (err) {
+    Logger.log("❌ Masalah Otorisasi: " + err.message);
+  }
+}
+
+/**
  * Jalankan fungsi ini sekali untuk memastikan Sheet memiliki header kolom yang benar
  */
 function initialSetup() {
   try {
     var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-    var sheet = ss.getSheetByName("Absensi");
     
+    // 1. Setup Sheet Absensi
+    var sheet = ss.getSheetByName("Absensi");
     if (!sheet) {
       sheet = ss.insertSheet("Absensi");
     }
 
-    // Buat Header jika baris pertama masih kosong
     if (sheet.getLastRow() === 0) {
       sheet.appendRow(["Tanggal & Waktu (WIT)", "ID / Nama User", "Tipe Absen", "Koordinat GPS", "Link Foto Drive"]);
-      
-      // Styling Header (Warna ungu & cetak tebal)
       var headerRange = sheet.getRange(1, 1, 1, 5);
       headerRange.setFontWeight("bold")
                  .setBackground("#6366f1")
                  .setFontColor("#ffffff");
       sheet.setFrozenRows(1);
     }
+
+    // 2. Setup Sheet User (Database Pengguna & Role)
+    var sheetUser = ss.getSheetByName("User");
+    if (!sheetUser) {
+      sheetUser = ss.insertSheet("User");
+    }
+
+    if (sheetUser.getLastRow() === 0) {
+      sheetUser.appendRow(["Nama", "Password", "Role"]);
+      var userHeaderRange = sheetUser.getRange(1, 1, 1, 3);
+      userHeaderRange.setFontWeight("bold")
+                     .setBackground("#10b981")
+                     .setFontColor("#ffffff");
+      sheetUser.setFrozenRows(1);
+
+      // Tambahkan Data Pengguna Contoh
+      sheetUser.appendRow(["Nevi", "123456", "Guru"]);
+      sheetUser.appendRow(["Ahmad", "123456", "Staf TU"]);
+      sheetUser.appendRow(["Admin", "admin123", "Kepala Sekolah"]);
+    }
     
-    Logger.log("Inisialisasi Sheet Absensi berhasil!");
+    Logger.log("Inisialisasi Sheet Absensi & User berhasil!");
   } catch (err) {
     Logger.log("Gagal melakukan setup: " + err.message);
   }
