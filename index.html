@@ -278,6 +278,27 @@
     }
     .badge-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
     .badge-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .badge-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-red { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    /* Custom Header untuk Admin vs Guru */
+    .portal-banner {
+      padding: 12px 16px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .banner-admin {
+      background: linear-gradient(135deg, rgba(147, 51, 234, 0.2) 0%, rgba(79, 70, 229, 0.2) 100%);
+      border-color: rgba(168, 85, 247, 0.4);
+    }
+    .banner-guru {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(14, 165, 233, 0.2) 100%);
+      border-color: rgba(52, 211, 153, 0.4);
+    }
 
     /* Style Tambahan untuk Panel Admin & Tabel */
     .admin-nav {
@@ -428,18 +449,23 @@
 
     <!-- 2. USER DASHBOARD -->
     <div id="viewUserDashboard" class="hidden">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      
+      <!-- Banner Header Dinamis (Admin vs Guru) -->
+      <div id="portalBanner" class="portal-banner banner-guru">
         <div>
-          <h2 id="userGreeting" style="font-size: 18px; font-weight: 800;">Hai, User</h2>
-          <span id="userRoleBadge" class="badge-status badge-green">Guru</span>
+          <span id="portalRoleTitle" style="font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #34d399;">PORTAL PRESENSI GURU</span>
+          <h2 id="userGreeting" style="font-size: 18px; font-weight: 800; margin-top: 2px;">Hai, User</h2>
         </div>
-        <button onclick="logout()" class="btn-secondary">Keluar</button>
+        <div style="text-align: right;">
+          <span id="userRoleBadge" class="badge-status badge-green">Guru</span>
+          <button onclick="logout()" class="btn-secondary" style="margin-top: 6px; padding: 4px 10px; font-size: 11px;">Keluar</button>
+        </div>
       </div>
 
       <!-- Tab Navigasi Admin (Hanya muncul jika Role = Admin / Kepala Sekolah) -->
       <div id="adminNavTab" class="admin-nav hidden">
-        <button id="btnTabSelfie" onclick="switchTab('selfie')" class="btn-tab active">📷 Absen Selfie</button>
-        <button id="btnTabAdmin" onclick="switchTab('admin')" class="btn-tab">📊 Rekap & Filter Admin</button>
+        <button id="btnTabAdmin" onclick="switchTab('admin')" class="btn-tab active">📊 Rekap Durasi Guru</button>
+        <button id="btnTabSelfie" onclick="switchTab('selfie')" class="btn-tab">📷 Absen Saya</button>
       </div>
 
       <!-- TAB 1: Live Clock & Camera Selfie -->
@@ -471,10 +497,11 @@
         </div>
       </div>
 
-      <!-- TAB 2: PANEL REKAP ADMIN -->
+      <!-- TAB 2: PANEL REKAP ADMIN & DURASI KERJA GURU -->
       <div id="sectionAdmin" class="hidden">
         <div class="bento-card">
-          <h3 style="font-size: 14px; font-weight: 800; margin-bottom: 12px; color: #818cf8;">🔍 Filter Kehadiran Guru & Staf</h3>
+          <h3 style="font-size: 14px; font-weight: 800; margin-bottom: 4px; color: #c084fc;">⏱️ Monitoring Jam & Durasi Kerja Guru</h3>
+          <p style="font-size: 11px; color: #9ca3af; margin-bottom: 14px;">Merekap otomatis jam Check-In, Check-Out, dan durasi kehadiran.</p>
           
           <div class="filter-grid">
             <div>
@@ -489,17 +516,17 @@
 
           <div class="filter-grid">
             <div>
-              <label style="font-size: 10px; color: #9ca3af; display: block; margin-bottom: 4px;">Nama Pengguna</label>
+              <label style="font-size: 10px; color: #9ca3af; display: block; margin-bottom: 4px;">Pilih Guru / Staf</label>
               <select id="filterNama" class="form-control" style="padding: 8px;" onchange="applyAdminFilter()">
-                <option value="ALL">Semua Nama</option>
+                <option value="ALL">Semua Guru</option>
               </select>
             </div>
             <div>
-              <label style="font-size: 10px; color: #9ca3af; display: block; margin-bottom: 4px;">Tipe Absen</label>
-              <select id="filterTipe" class="form-control" style="padding: 8px;" onchange="applyAdminFilter()">
-                <option value="ALL">Semua Tipe</option>
-                <option value="Check-In">Check-In</option>
-                <option value="Check-Out">Check-Out</option>
+              <label style="font-size: 10px; color: #9ca3af; display: block; margin-bottom: 4px;">Status Kehadiran</label>
+              <select id="filterStatus" class="form-control" style="padding: 8px;" onchange="applyAdminFilter()">
+                <option value="ALL">Semua Status</option>
+                <option value="Lengkap">Hadir Lengkap</option>
+                <option value="Belum Check-Out">Belum Check-Out</option>
               </select>
             </div>
           </div>
@@ -507,33 +534,35 @@
           <!-- Summary Stats -->
           <div class="stat-card-grid">
             <div class="stat-card">
-              <div id="statTotal" class="stat-value">0</div>
-              <div class="stat-label">Total Absen</div>
+              <div id="statTotalGuru" class="stat-value">0</div>
+              <div class="stat-label">Total Guru Hadir</div>
             </div>
             <div class="stat-card">
-              <div id="statCheckIn" class="stat-value" style="color: #34d399;">0</div>
-              <div class="stat-label">Check-In</div>
+              <div id="statLengkap" class="stat-value" style="color: #34d399;">0</div>
+              <div class="stat-label">Hadir Lengkap</div>
             </div>
             <div class="stat-card">
-              <div id="statCheckOut" class="stat-value" style="color: #f43f5e;">0</div>
-              <div class="stat-label">Check-Out</div>
+              <div id="statBelumOut" class="stat-value" style="color: #fbbf24;">0</div>
+              <div class="stat-label">Belum Check-Out</div>
             </div>
           </div>
 
-          <!-- Tabel Data Absensi -->
+          <!-- Tabel Data Absensi & Durasi -->
           <div class="table-container">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Waktu (WIT)</th>
-                  <th>Nama</th>
-                  <th>Tipe</th>
-                  <th>Foto</th>
+                  <th>Tanggal & Guru</th>
+                  <th>Jam Check-In</th>
+                  <th>Jam Check-Out</th>
+                  <th>Durasi Kehadiran</th>
+                  <th>Status</th>
+                  <th>Foto Bukti</th>
                 </tr>
               </thead>
               <tbody id="adminTableBody">
                 <tr>
-                  <td colspan="4" style="text-align: center; color: #9ca3af;">Memuat data...</td>
+                  <td colspan="6" style="text-align: center; color: #9ca3af;">Memuat data durasi guru...</td>
                 </tr>
               </tbody>
             </table>
@@ -541,7 +570,7 @@
 
           <!-- Tombol Download CSV -->
           <button onclick="downloadCsvReport()" class="btn-download">
-            📥 Download Laporan Kehadiran (CSV/Excel)
+            📥 Download Laporan Durasi Guru (CSV/Excel)
           </button>
         </div>
       </div>
@@ -559,7 +588,8 @@
   var selfieData = "";
   var mediaStreamTrack = null;
   var rawAttendanceData = [];
-  var filteredAttendanceData = [];
+  var processedSummaryData = [];
+  var filteredSummaryData = [];
 
   // Load URL API dari localStorage jika tersimpan
   window.onload = function() {
@@ -569,10 +599,297 @@
     initClock();
   };
 
-  function getApiUrl() {
-    var url = document.getElementById('gasApiUrl').value.trim();
-    if (url) localStorage.setItem('gas_api_url', url);
-    return url;
+  function handleLogin(e) {
+    e.preventDefault();
+    var nama = document.getElementById('loginNama').value;
+    var pass = document.getElementById('loginPass').value;
+
+    callGasApi("login", { nama: nama, pass: pass }, function(res) {
+      if (res.success) {
+        currentUser = res.user;
+        document.getElementById('viewLogin').classList.add('hidden');
+        document.getElementById('viewUserDashboard').classList.remove('hidden');
+        document.getElementById('userGreeting').innerText = "Hai, " + currentUser.nama;
+        
+        var userRole = currentUser.role || "Guru";
+        document.getElementById('userRoleBadge').innerText = userRole;
+
+        // Cek jika user adalah Admin / Kepala Sekolah
+        var isAdmin = userRole.toLowerCase().includes("admin") || userRole.toLowerCase().includes("kepala");
+        var banner = document.getElementById('portalBanner');
+        var roleTitle = document.getElementById('portalRoleTitle');
+
+        if (isAdmin) {
+          // Tampilan Khusus Administrator
+          banner.className = "portal-banner banner-admin";
+          roleTitle.innerText = "DASHBOARD MONITORING ADMIN";
+          roleTitle.style.color = "#c084fc";
+          document.getElementById('userRoleBadge').className = "badge-status badge-purple";
+          document.getElementById('adminNavTab').classList.remove('hidden');
+          switchTab('admin'); // Langsung buka Rekap Durasi untuk Admin
+        } else {
+          // Tampilan Khusus Guru / Staf
+          banner.className = "portal-banner banner-guru";
+          roleTitle.innerText = "PORTAL PRESENSI GURU";
+          roleTitle.style.color = "#34d399";
+          document.getElementById('userRoleBadge').className = "badge-status badge-green";
+          document.getElementById('adminNavTab').classList.add('hidden');
+          switchTab('selfie'); // Langsung buka Kamera Absen untuk Guru
+        }
+
+        showToast("Login Berhasil!");
+      } else {
+        showToast(res.message || "Login Gagal!");
+      }
+    });
+  }
+
+  function switchTab(tab) {
+    var btnSelfie = document.getElementById('btnTabSelfie');
+    var btnAdmin = document.getElementById('btnTabAdmin');
+    var secSelfie = document.getElementById('sectionSelfie');
+    var secAdmin = document.getElementById('sectionAdmin');
+
+    if (tab === 'selfie') {
+      if (btnSelfie) btnSelfie.classList.add('active');
+      if (btnAdmin) btnAdmin.classList.remove('active');
+      secSelfie.classList.remove('hidden');
+      secAdmin.classList.add('hidden');
+      startCamera();
+    } else {
+      if (btnAdmin) btnAdmin.classList.add('active');
+      if (btnSelfie) btnSelfie.classList.remove('active');
+      secAdmin.classList.remove('hidden');
+      secSelfie.classList.add('hidden');
+      if (mediaStreamTrack) {
+        mediaStreamTrack.getTracks().forEach(function(t) { t.stop(); });
+      }
+      loadAdminData();
+    }
+  }
+
+  function loadAdminData() {
+    callGasApi("getAttendanceData", {}, function(res) {
+      if (res.success) {
+        rawAttendanceData = res.data || [];
+        processedSummaryData = computeDurationSummary(rawAttendanceData);
+        populateNamaDropdown(processedSummaryData);
+        applyAdminFilter();
+        showToast("Data Durasi Guru Diperbarui!");
+      } else {
+        showToast(res.message || "Gagal memuat rekap");
+      }
+    });
+  }
+
+  /* MENGHITUNG DURASI CHECK-IN DAN CHECK-OUT PER GURU PER TANGGAL */
+  function computeDurationSummary(records) {
+    var groups = {};
+
+    records.forEach(function(r) {
+      if (!r.waktu) return;
+      var timeParts = r.waktu.split(" ");
+      var dateStr = timeParts[0]; // "YYYY-MM-DD"
+      var key = dateStr + "___" + r.nama;
+
+      if (!groups[key]) {
+        groups[key] = {
+          tanggal: dateStr,
+          nama: r.nama,
+          checkInStr: null,
+          checkInTime: null,
+          checkInFoto: null,
+          checkOutStr: null,
+          checkOutTime: null,
+          checkOutFoto: null
+        };
+      }
+
+      // Parsing Date Object (Format ISO)
+      var timeDate = new Date(r.waktu.replace(/-/g, "/"));
+
+      if (r.tipe === "Check-In") {
+        if (!groups[key].checkInTime || timeDate < groups[key].checkInTime) {
+          groups[key].checkInTime = timeDate;
+          groups[key].checkInStr = timeParts[1] || r.waktu;
+          groups[key].checkInFoto = r.fotoUrl;
+        }
+      } else if (r.tipe === "Check-Out") {
+        if (!groups[key].checkOutTime || timeDate > groups[key].checkOutTime) {
+          groups[key].checkOutTime = timeDate;
+          groups[key].checkOutStr = timeParts[1] || r.waktu;
+          groups[key].checkOutFoto = r.fotoUrl;
+        }
+      }
+    });
+
+    var summaryList = [];
+    Object.keys(groups).forEach(function(k) {
+      var g = groups[k];
+      var durasiStr = "-";
+      var status = "Belum Lengkap";
+      var badgeClass = "badge-purple";
+
+      if (g.checkInTime && g.checkOutTime) {
+        var diffMs = g.checkOutTime - g.checkInTime;
+        if (diffMs < 0) diffMs = 0;
+        var diffMins = Math.floor(diffMs / (1000 * 60));
+        var hours = Math.floor(diffMins / 60);
+        var mins = diffMins % 60;
+        durasiStr = hours + " Jam " + mins + " Menit";
+        status = "Hadir Lengkap";
+        badgeClass = "badge-green";
+      } else if (g.checkInTime && !g.checkOutTime) {
+        status = "Belum Check-Out";
+        badgeClass = "badge-amber";
+      } else if (!g.checkInTime && g.checkOutTime) {
+        status = "Hanya Check-Out";
+        badgeClass = "badge-red";
+      }
+
+      summaryList.push({
+        tanggal: g.tanggal,
+        nama: g.nama,
+        checkIn: g.checkInStr || "-",
+        checkOut: g.checkOutStr || "-",
+        durasi: durasiStr,
+        status: status,
+        badgeClass: badgeClass,
+        fotoCheckIn: g.checkInFoto,
+        fotoCheckOut: g.checkOutFoto
+      });
+    });
+
+    // Urutkan tanggal terbaru di paling atas
+    summaryList.sort(function(a, b) {
+      return b.tanggal.localeCompare(a.tanggal);
+    });
+
+    return summaryList;
+  }
+
+  function populateNamaDropdown(summaryData) {
+    var selectNama = document.getElementById('filterNama');
+    var uniqueNames = [];
+    summaryData.forEach(function(item) {
+      if (item.nama && !uniqueNames.includes(item.nama)) {
+        uniqueNames.push(item.nama);
+      }
+    });
+
+    var currentSelected = selectNama.value;
+    selectNama.innerHTML = '<option value="ALL">Semua Guru</option>';
+    uniqueNames.forEach(function(nama) {
+      var opt = document.createElement('option');
+      opt.value = nama;
+      opt.innerText = nama;
+      selectNama.appendChild(opt);
+    });
+    selectNama.value = currentSelected || "ALL";
+  }
+
+  function applyAdminFilter() {
+    var startDate = document.getElementById('filterStartDate').value;
+    var endDate = document.getElementById('filterEndDate').value;
+    var selectedNama = document.getElementById('filterNama').value;
+    var selectedStatus = document.getElementById('filterStatus').value;
+
+    filteredSummaryData = processedSummaryData.filter(function(row) {
+      var matchDate = true;
+      var matchNama = true;
+      var matchStatus = true;
+
+      if (startDate && row.tanggal < startDate) matchDate = false;
+      if (endDate && row.tanggal > endDate) matchDate = false;
+      if (selectedNama !== "ALL" && row.nama !== selectedNama) matchNama = false;
+      if (selectedStatus !== "ALL") {
+        if (selectedStatus === "Lengkap" && row.status !== "Hadir Lengkap") matchStatus = false;
+        if (selectedStatus === "Belum Check-Out" && row.status !== "Belum Check-Out") matchStatus = false;
+      }
+
+      return matchDate && matchNama && matchStatus;
+    });
+
+    renderAdminTable(filteredSummaryData);
+  }
+
+  function renderAdminTable(data) {
+    var tbody = document.getElementById('adminTableBody');
+    tbody.innerHTML = "";
+
+    var countLengkap = 0;
+    var countBelumOut = 0;
+
+    if (data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #9ca3af;">Tidak ada data durasi sesuai filter.</td></tr>';
+    } else {
+      data.forEach(function(row) {
+        if (row.status === "Hadir Lengkap") countLengkap++;
+        if (row.status === "Belum Check-Out") countBelumOut++;
+
+        var tr = document.createElement('tr');
+        
+        var fotoInCell = row.fotoCheckIn && row.fotoCheckIn.startsWith("http")
+          ? `<a href="${row.fotoCheckIn}" target="_blank" style="color: #34d399; text-decoration: underline;">Foto In</a>`
+          : `-`;
+        var fotoOutCell = row.fotoCheckOut && row.fotoCheckOut.startsWith("http")
+          ? `<a href="${row.fotoCheckOut}" target="_blank" style="color: #c084fc; text-decoration: underline;">Foto Out</a>`
+          : `-`;
+
+        tr.innerHTML = `
+          <td><strong>${row.nama}</strong><br><small style="color:#9ca3af;">${row.tanggal}</small></td>
+          <td style="color:#34d399; font-weight:700;">${row.checkIn}</td>
+          <td style="color:#f43f5e; font-weight:700;">${row.checkOut}</td>
+          <td style="font-weight:800; color:#818cf8;">${row.durasi}</td>
+          <td><span class="badge-status ${row.badgeClass}">${row.status}</span></td>
+          <td>${fotoInCell} | ${fotoOutCell}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById('statTotalGuru').innerText = data.length;
+    document.getElementById('statLengkap').innerText = countLengkap;
+    document.getElementById('statBelumOut').innerText = countBelumOut;
+  }
+
+  function downloadCsvReport() {
+    if (filteredSummaryData.length === 0) {
+      showToast("Tidak ada data untuk diunduh!");
+      return;
+    }
+
+    var csvRows = [];
+    // Header CSV Laporan Durasi
+    csvRows.push(["Tanggal", "Nama Guru / Staf", "Jam Check-In", "Jam Check-Out", "Durasi Kehadiran", "Status", "Link Foto Check-In", "Link Foto Check-Out"]);
+
+    // Baris Data
+    filteredSummaryData.forEach(function(row) {
+      csvRows.push([
+        `"${row.tanggal}"`,
+        `"${row.nama}"`,
+        `"${row.checkIn}"`,
+        `"${row.checkOut}"`,
+        `"${row.durasi}"`,
+        `"${row.status}"`,
+        `"${row.fotoCheckIn || '-'}"`,
+        `"${row.fotoCheckOut || '-'}"`
+      ]);
+    });
+
+    var csvContent = "\uFEFF" + csvRows.map(e => e.join(",")).join("\n");
+    var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    
+    var a = document.createElement('a');
+    var filename = "Laporan_Durasi_Guru_Rajawali_" + new Date().toISOString().slice(0, 10) + ".csv";
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    showToast("File Laporan Durasi Guru Berhasil Diunduh!");
   }
 
   function initClock() {
