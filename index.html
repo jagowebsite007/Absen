@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sistem Absensi Sekolah Rajawali (GitHub Pages Edition)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #030712;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.12) 0%, transparent 45%);
+      color: #f3f4f6;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px 8px;
+    }
+
+    .app-viewport {
+      width: 100%;
+      max-width: 450px;
+      min-height: 90vh;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 32px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 40px rgba(99, 102, 241, 0.12);
+      overflow: hidden;
+    }
+
+    .top-panel {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+      padding: 36px 24px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .pattern-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.12;
+      pointer-events: none;
+    }
+
+    .logo-badge {
+      width: 76px;
+      height: 76px;
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 24px -6px rgba(99, 102, 241, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+      z-index: 2;
+    }
+
+    .main-panel {
+      background: rgba(15, 23, 42, 0.95);
+      flex: 1;
+      border-radius: 28px 28px 0 0;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      z-index: 2;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .title-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .title-header h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    .title-header p {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    .config-box {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px dashed rgba(99, 102, 241, 0.4);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 16px;
+      font-size: 11px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #818cf8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 14px;
+      background-color: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      font-size: 13px;
+      color: #ffffff;
+      outline: none;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .form-control:focus {
+      background-color: rgba(30, 41, 59, 0.95);
+      border-color: #6366f1;
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background-color: rgba(255, 255, 255, 0.06);
+      color: #e5e7eb;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .bento-card {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 16px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      margin-bottom: 16px;
+    }
+
+    .clock-widget {
+      text-align: center;
+      margin-bottom: 14px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    .clock-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #818cf8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .clock-time {
+      font-size: 22px;
+      font-weight: 800;
+      color: #ffffff;
+      font-family: monospace;
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+
+    .camera-box {
+      width: 100%;
+      height: 230px;
+      background-color: #090d16;
+      border-radius: 18px;
+      border: 1px dashed rgba(99, 102, 241, 0.4);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .camera-box video, .camera-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(99, 102, 241, 0.5);
+      color: #ffffff;
+      padding: 12px 24px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 999;
+      display: none;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      backdrop-filter: blur(12px);
+      text-align: center;
+      max-width: 90%;
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="app-viewport">
+  <div class="top-panel">
+    <div class="logo-badge">
+      <span style="font-size: 28px;">🏫</span>
+    </div>
+  </div>
+
+  <div class="main-panel">
+    
+    <!-- URL GAS API Config -->
+    <div class="config-box">
+      <label style="color:#818cf8; font-weight:bold;">GAS API WebApp URL:</label>
+      <input type="text" id="gasApiUrl" class="form-control" style="font-size:10px; margin-top:4px;" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+
+    <!-- 1. LOGIN -->
+    <div id="viewLogin">
+      <div class="title-header">
+        <h1>Absensi Rajawali</h1>
+        <p>Akses Kamera Langsung dari GitHub Pages</p>
+      </div>
+
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Nama Pengguna</label>
+          <input type="text" id="loginNama" class="form-control" placeholder="Masukkan Nama" required>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPass" class="form-control" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn-primary">Masuk Akun</button>
+      </form>
+    </div>
+
+    <!-- 2. USER DASHBOARD -->
+    <div id="viewUserDashboard" class="hidden">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+          <h2 id="userGreeting" style="font-size: 18px; font-weight: 800;">Hai, User</h2>
+          <span id="userRoleBadge" class="badge-status badge-green">Guru</span>
+        </div>
+        <button onclick="logout()" class="btn-secondary">Keluar</button>
+      </div>
+
+      <!-- Live Clock & Camera -->
+      <div class="bento-card">
+        <div class="clock-widget">
+          <div class="clock-title">Waktu Real-Time (WIT)</div>
+          <div id="liveClockDisplay" class="clock-time">--:--:-- WIT</div>
+        </div>
+
+        <div class="camera-box">
+          <video id="webcam" autoplay playsinline muted></video>
+          <img id="selfiePreview" src="" class="hidden">
+        </div>
+
+        <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+          <button type="button" onclick="startCamera()" class="btn-secondary" style="flex: 1;">📷 Aktifkan Kamera</button>
+          <button type="button" onclick="takeSnap()" class="btn-secondary" style="flex: 1; background: rgba(99,102,241,0.2); color: #818cf8;">📸 Ambil Selfie</button>
+        </div>
+
+        <div style="font-size: 11px; color: #9ca3af; margin-bottom: 12px;">
+          <strong>GPS:</strong> <span id="gpsStatus">Mendeteksi...</span>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button onclick="doAttendance('Check-In')" class="btn-primary" style="flex: 1;">Check-In</button>
+          <button onclick="doAttendance('Check-Out')" class="btn-primary" style="flex: 1; background: #334155;">Check-Out</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast" class="toast">Notifikasi...</div>
+
+<script>
+  var currentUser = null;
+  var currentCoords = "";
+  var selfieData = "";
+  var mediaStreamTrack = null;
+
+  // Load URL API dari localStorage jika tersimpan
+  window.onload = function() {
+    var savedUrl = localStorage.getItem('gas_api_url');
+    if (savedUrl) document.getElementById('gasApiUrl').value = savedUrl;
+    initGeolocation();
+    initClock();
+  };
+
+  function getApiUrl() {
+    var url = document.getElementById('gasApiUrl').value.trim();
+    if (url) localStorage.setItem('gas_api_url', url);
+    return url;
+  }
+
+  function initClock() {
+    setInterval(function() {
+      var d = new Date();
+      document.getElementById('liveClockDisplay').innerText = d.toLocaleTimeString('id-ID') + " WIT";
+    }, 1000);
+  }
+
+  function initGeolocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        currentCoords = pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6);
+        document.getElementById('gpsStatus').innerText = "Terkunci (" + currentCoords + ")";
+      }, function() {
+        document.getElementById('gpsStatus').innerText = "Gagal mengambil GPS";
+      });
+    }
+  }
+
+  /* Kamera Langsung dari GitHub Pages (100% Bekerja karena bukan iframe!) */
+  function startCamera() {
+    var video = document.getElementById('webcam');
+    video.classList.remove('hidden');
+    document.getElementById('selfiePreview').classList.add('hidden');
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+        .then(function(stream) {
+          mediaStreamTrack = stream;
+          video.srcObject = stream;
+          showToast("Kamera Berhasil Diaktifkan!");
+        })
+        .catch(function(err) {
+          showToast("Kamera gagal dibuka: " + err.message);
+        });
+    } else {
+      showToast("Browser tidak mendukung WebRTC Kamera.");
+    }
+  }
+
+  function takeSnap() {
+    var video = document.getElementById('webcam');
+    if (video.videoWidth === 0) {
+      showToast("Buka kamera terlebih dahulu!");
+      return;
+    }
+    var canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 300;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, 300, 300);
+    selfieData = canvas.toDataURL('image/jpeg', 0.85);
+
+    var img = document.getElementById('selfiePreview');
+    img.src = selfieData;
+    img.classList.remove('hidden');
+    video.classList.add('hidden');
+
+    if (mediaStreamTrack) {
+      mediaStreamTrack.getTracks().forEach(function(t) { t.stop(); });
+    }
+    showToast("Foto selfie berhasil diambil!");
+  }
+
+  /* API Communication via Fetch (CORS Direct to GAS) */
+  function callGasApi(action, payload, callback) {
+    var apiUrl = getApiUrl();
+    if (!apiUrl) {
+      showToast("Masukkan URL Apps Script Web App terlebih dahulu!");
+      return;
+    }
+
+    showToast("Memproses...");
+    fetch(apiUrl, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ action: action, payload: payload })
+    })
+    .then(res => res.json())
+    .then(data => callback(data))
+    .catch(err => showToast("Error API: " + err.message));
+  }
+
+  function handleLogin(e) {
+    e.preventDefault();
+    var nama = document.getElementById('loginNama').value;
+    var pass = document.getElementById('loginPass').value;
+
+    callGasApi("login", { nama: nama, pass: pass }, function(res) {
+      if (res.success) {
+        currentUser = res.user;
+        document.getElementById('viewLogin').classList.add('hidden');
+        document.getElementById('viewUserDashboard').classList.remove('hidden');
+        document.getElementById('userGreeting').innerText = "Hai, " + currentUser.nama;
+        showToast("Login Berhasil!");
+        startCamera();
+      } else {
+        showToast(res.message || "Login Gagal!");
+      }
+    });
+  }
+
+  function doAttendance(tipe) {
+    if (!selfieData) {
+      showToast("Ambil foto selfie terlebih dahulu!");
+      return;
+    }
+    callGasApi("submitAttendance", {
+      userId: currentUser.id,
+      tipe: tipe,
+      selfieData: selfieData,
+      coords: currentCoords
+    }, function(res) {
+      showToast(res.message);
+    });
+  }
+
+  function logout() {
+    currentUser = null;
+    document.getElementById('viewUserDashboard').classList.add('hidden');
+    document.getElementById('viewLogin').classList.remove('hidden');
+  }
+
+  function showToast(msg) {
+    var toast = document.getElementById('toast');
+    toast.innerText = msg;
+    toast.style.display = 'block';
+    setTimeout(function() { toast.style.display = 'none'; }, 3500);
+  }
+</script>
+
+</body>
+</html>

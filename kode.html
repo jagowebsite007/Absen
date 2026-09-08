@@ -1,0 +1,50 @@
+/**
+ * ==========================================
+ * Code.gs - Google Apps Script REST API Backend
+ * ==========================================
+ */
+
+function doPost(e) {
+  try {
+    var request = JSON.parse(e.postData.contents);
+    var action = request.action;
+    var payload = request.payload;
+    var result = { success: false, message: "Aksi tidak dikenal" };
+
+    if (action === "login") {
+      result = handleLogin(payload.nama, payload.pass);
+    } else if (action === "submitAttendance") {
+      result = handleSubmitAttendance(payload.userId, payload.tipe, payload.selfieData, payload.coords);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  return ContentService.createTextOutput("REST API Absensi Aktif!");
+}
+
+function handleLogin(nama, pass) {
+  // Contoh logic login sederhana (Sesuaikan dengan Google Sheet Anda)
+  if (nama && pass) {
+    return {
+      success: true,
+      user: { id: "GR01", nama: nama, role: "Guru" }
+    };
+  }
+  return { success: false, message: "Username/Password Salah" };
+}
+
+function handleSubmitAttendance(userId, tipe, selfieData, coords) {
+  // Simpan foto ke Google Drive & data ke Google Sheet di sini
+  return {
+    success: true,
+    message: "Absensi " + tipe + " berhasil dicatat!"
+  };
+}
