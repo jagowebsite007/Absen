@@ -1,15 +1,44 @@
 /**
  * ==========================================
- * setup.gs - Project Config & Drive Storage
+ * setup.gs - Konfigurasi ID & Otomatisasi Header
  * ==========================================
  */
 
 const CONFIG = {
   APP_TITLE: "Aplikasi Absensi Rajawali",
-  SPREADSHEET_ID: "1WwwA3gDGnEFRVLhoq5_-y3AyIN1joJEtdh57vRHxR8U/edit?gid=1518236642#gid=1518236642",
-  FOLDER_ID: "1W8kCjJdXSWvAGLoe5jZvvop3extOuX_P"
+  // Tempel ID Spreadsheet Anda di bawah ini
+  SPREADSHEET_ID: "1WwwA3gDGnEFRVLhoq5_-y3AyIN1joJEtdh57vRHxR8U",
+  // Tempel ID Folder Google Drive Anda di bawah ini
+  FOLDER_ID: "1W8kCjJdXSWvAGLoe5jZvvop3extOuX_P",
+  TIMEZONE: "GMT+9" // WIT (Waktu Indonesia Timur)
 };
 
+/**
+ * Jalankan fungsi ini sekali untuk memastikan Sheet memiliki header kolom yang benar
+ */
 function initialSetup() {
-  Logger.log("Inisialisasi sistem berhasil.");
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("Absensi");
+    
+    if (!sheet) {
+      sheet = ss.insertSheet("Absensi");
+    }
+
+    // Buat Header jika baris pertama masih kosong
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["Tanggal & Waktu (WIT)", "ID / Nama User", "Tipe Absen", "Koordinat GPS", "Link Foto Drive"]);
+      
+      // Styling Header (Warna ungu & cetak tebal)
+      var headerRange = sheet.getRange(1, 1, 1, 5);
+      headerRange.setFontWeight("bold")
+                 .setBackground("#6366f1")
+                 .setFontColor("#ffffff");
+      sheet.setFrozenRows(1);
+    }
+    
+    Logger.log("Inisialisasi Sheet Absensi berhasil!");
+  } catch (err) {
+    Logger.log("Gagal melakukan setup: " + err.message);
+  }
 }
