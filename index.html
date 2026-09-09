@@ -517,7 +517,7 @@
       </div>
 
       <!-- SECTION 1: ABSEN SELFIE & GPS (GURU) -->
-      <div id="secAbsen" class="bento-card">
+      <div id="secAbsen" class="bento-card hidden">
         <div class="clock-widget">
           <div class="clock-title">Waktu Real-Time (WIT)</div>
           <div id="liveClockDisplay" class="clock-time">--:--:-- WIT</div>
@@ -917,6 +917,11 @@
     document.getElementById('btnTabIjinForm').className = "btn-tab " + (tab === 'ijinForm' ? 'active' : '');
     document.getElementById('btnTabIjinHist').className = "btn-tab " + (tab === 'ijinHist' ? 'active' : '');
 
+    // Sembunyikan semua modul Admin
+    document.getElementById('secAdminRecap').classList.add('hidden');
+    document.getElementById('secAdminIjin').classList.add('hidden');
+
+    // Tampilkan modul Guru yang dipilih
     document.getElementById('secAbsen').classList.toggle('hidden', tab !== 'absen');
     document.getElementById('secIjinForm').classList.toggle('hidden', tab !== 'ijinForm');
     document.getElementById('secIjinHist').classList.toggle('hidden', tab !== 'ijinHist');
@@ -931,6 +936,12 @@
     document.getElementById('btnTabAdminRecap').className = "btn-tab " + (tab === 'recap' ? 'active' : '');
     document.getElementById('btnTabAdminIjin').className = "btn-tab " + (tab === 'ijinApproval' ? 'active' : '');
 
+    // Sembunyikan seluruh modul Guru (Kamera Selfie, Form Ijin, & Riwayat Guru)
+    document.getElementById('secAbsen').classList.add('hidden');
+    document.getElementById('secIjinForm').classList.add('hidden');
+    document.getElementById('secIjinHist').classList.add('hidden');
+
+    // Tampilkan modul Admin yang dipilih
     document.getElementById('secAdminRecap').classList.toggle('hidden', tab !== 'recap');
     document.getElementById('secAdminIjin').classList.toggle('hidden', tab !== 'ijinApproval');
 
