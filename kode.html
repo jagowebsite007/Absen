@@ -1,7 +1,7 @@
 /**
  * ==========================================
  * Code.gs - REST API Backend & Google Drive Storage
- * Dynamic Config & Management Permohonan Ijin
+ * Dynamic Config & Management Permohonan Ijin & Status Keterlambatan
  * ==========================================
  */
 
@@ -73,7 +73,8 @@ function getConfig() {
     SCHOOL_LAT: CONFIG.SCHOOL_LAT || 1.692656,
     SCHOOL_LNG: CONFIG.SCHOOL_LNG || 128.009276,
     MAX_RADIUS_METERS: CONFIG.MAX_RADIUS_METERS || 20,
-    FOLDER_ID: CONFIG.FOLDER_ID || ""
+    FOLDER_ID: CONFIG.FOLDER_ID || "",
+    JAM_MASUK_MAX: CONFIG.JAM_MASUK_MAX || "07:01"
   };
 
   try {
@@ -157,7 +158,8 @@ function getUserSchoolConfig(userId) {
   var config = {
     lat: globalConfig.SCHOOL_LAT,
     lng: globalConfig.SCHOOL_LNG,
-    maxRadius: globalConfig.MAX_RADIUS_METERS
+    maxRadius: globalConfig.MAX_RADIUS_METERS,
+    jamMasukMax: globalConfig.JAM_MASUK_MAX
   };
 
   try {
@@ -189,7 +191,15 @@ function getUserSchoolConfig(userId) {
 }
 
 function getTodayUserAttendance(userId) {
-  var status = { hasCheckedIn: false, hasCheckedOut: false };
+  var status = { 
+    hasCheckedIn: false, 
+    hasCheckedOut: false,
+    checkInTime: "-",
+    checkOutTime: "-",
+    isLate: false,
+    statusText: "Belum Absen Hari Ini"
+  };
+
   try {
     var globalConfig = getConfig();
     var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
@@ -204,16 +214,35 @@ function getTodayUserAttendance(userId) {
       var rowUser = String(data[i][1]);
       var rowTipe = String(data[i][2]);
       var dateStr = "";
+      var timeStr = "";
 
       if (rawTime instanceof Date) {
         dateStr = Utilities.formatDate(rawTime, globalConfig.TIMEZONE, "yyyy-MM-dd");
+        timeStr = Utilities.formatDate(rawTime, globalConfig.TIMEZONE, "HH:mm:ss");
       } else {
-        dateStr = String(rawTime).split(" ")[0];
+        var parts = String(rawTime).split(" ");
+        dateStr = parts[0];
+        timeStr = parts[1] || "";
       }
 
       if (rowUser.toLowerCase() === String(userId).toLowerCase() && dateStr === todayStr) {
-        if (rowTipe === "Check-In") status.hasCheckedIn = true;
-        if (rowTipe === "Check-Out") status.hasCheckedOut = true;
+        if (rowTipe === "Check-In") {
+          status.hasCheckedIn = true;
+          status.checkInTime = timeStr;
+          
+          var lateStatus = String(data[i][6] || "");
+          if (lateStatus.indexOf("Terlambat") !== -1) {
+            status.isLate = true;
+            status.statusText = "Terlambat (Check-In: " + timeStr + ")";
+          } else {
+            status.isLate = false;
+            status.statusText = "Tepat Waktu (Check-In: " + timeStr + ")";
+          }
+        }
+        if (rowTipe === "Check-Out") {
+          status.hasCheckedOut = true;
+          status.checkOutTime = timeStr;
+        }
       }
     }
   } catch(e) {}
@@ -257,6 +286,7 @@ function handleSubmitAttendance(userId, tipe, selfieData, coords) {
 
     var now = new Date();
     var timeFormatted = Utilities.formatDate(now, globalConfig.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
+    var timeOnly = Utilities.formatDate(now, globalConfig.TIMEZONE, "HH:mm");
     var dateFileFormatted = Utilities.formatDate(now, globalConfig.TIMEZONE, "yyyyMMdd_HHmmss");
 
     var folderId = globalConfig.FOLDER_ID || CONFIG.FOLDER_ID;
@@ -277,6 +307,17 @@ function handleSubmitAttendance(userId, tipe, selfieData, coords) {
     if (!sheet) {
       initialSetup();
       sheet = ss.getSheetByName("Absensi");
+    }
+
+    // CEK KETERLAMBATAN KHUSUS CHECK-IN
+    var statusKehadiran = "-";
+    if (tipe === "Check-In") {
+      var jamMaxConfig = globalConfig.JAM_MASUK_MAX || "07:01";
+      if (timeOnly > jamMaxConfig) {
+        statusKehadiran = "Terlambat";
+      } else {
+        statusKehadiran = "Tepat Waktu";
+      }
     }
 
     // HITUNG DURASI KERJA KHUSUS TYPE CHECK-OUT
@@ -307,21 +348,27 @@ function handleSubmitAttendance(userId, tipe, selfieData, coords) {
       }
     }
 
-    // Simpan baris baru dengan Kolom ke-6: Durasi Kerja
+    // Simpan baris baru dengan Kolom ke-6: Durasi Kerja, Kolom ke-7: Status Kehadiran
     sheet.appendRow([
       timeFormatted,
       userId,
       tipe,
       coords + " (" + Math.round(distanceMeters) + "m)",
       photoUrl,
-      durasiKerja
+      durasiKerja,
+      statusKehadiran
     ]);
 
     var updatedStatus = getTodayUserAttendance(userId);
 
+    var msgText = "Absensi " + tipe + " Berhasil!";
+    if (tipe === "Check-In" && statusKehadiran === "Terlambat") {
+      msgText += " (Keterangan: TERLAMBAT karena Check-In di atas jam " + (globalConfig.JAM_MASUK_MAX || "07:01") + ")";
+    }
+
     return {
       success: true,
-      message: "Absensi " + tipe + " Berhasil! Foto tersimpan di Google Drive.",
+      message: msgText,
       photoUrl: photoUrl,
       todayStatus: updatedStatus
     };
@@ -332,7 +379,7 @@ function handleSubmitAttendance(userId, tipe, selfieData, coords) {
 }
 
 /**
- * Pengajuan Ijin Guru (Ijin Sakit, Ijin Dinas, Ijin Lainnya)
+ * Pengajuan Ijin Guru
  */
 function handleSubmitIjin(userId, tipeIjin, keterangan, fotoData, tanggalIjin) {
   try {
@@ -525,7 +572,8 @@ function handleGetAttendanceData() {
         tipe: String(row[2]),
         gps: String(row[3]),
         fotoUrl: String(row[4]),
-        durasi: String(row[5] || "-")
+        durasi: String(row[5] || "-"),
+        statusKehadiran: String(row[6] || "-")
       });
     }
 
