@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sistem Absensi Sekolah Rajawali</title>
+  <title>Sistem Absensi & Perizinan Sekolah Rajawali</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -32,7 +32,7 @@
 
     .app-viewport {
       width: 100%;
-      max-width: 450px;
+      max-width: 480px;
       min-height: 90vh;
       background: rgba(15, 23, 42, 0.85);
       backdrop-filter: blur(24px);
@@ -48,7 +48,7 @@
 
     .top-panel {
       background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
-      padding: 32px 24px 20px 24px;
+      padding: 28px 24px 16px 24px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -57,10 +57,10 @@
     }
 
     .logo-badge {
-      width: 80px;
-      height: 80px;
+      width: 72px;
+      height: 72px;
       background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-      border-radius: 22px;
+      border-radius: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -74,7 +74,7 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      border-radius: 16px;
+      border-radius: 14px;
     }
 
     .main-panel {
@@ -172,6 +172,11 @@
       transform: none;
     }
 
+    .btn-amber {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    }
+
     .btn-secondary {
       background-color: rgba(255, 255, 255, 0.08);
       color: #e5e7eb;
@@ -242,7 +247,7 @@
 
     .camera-box {
       width: 100%;
-      height: 210px;
+      height: 200px;
       background-color: #090d16;
       border-radius: 16px;
       border: 1px dashed rgba(99, 102, 241, 0.4);
@@ -284,9 +289,9 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      padding: 4px 10px;
+      padding: 3px 8px;
       border-radius: 20px;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
     }
     .badge-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
@@ -297,7 +302,7 @@
     .portal-banner {
       padding: 12px 14px;
       border-radius: 14px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -312,19 +317,19 @@
       border-color: rgba(52, 211, 153, 0.4);
     }
 
-    .admin-nav {
+    .sub-nav {
       display: flex;
-      gap: 8px;
-      margin-bottom: 14px;
+      gap: 6px;
+      margin-bottom: 12px;
     }
     .btn-tab {
       flex: 1;
-      padding: 8px;
+      padding: 8px 4px;
       border-radius: 10px;
       background: rgba(255, 255, 255, 0.05);
       color: #9ca3af;
       border: 1px solid rgba(255, 255, 255, 0.1);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       cursor: pointer;
       text-align: center;
@@ -397,8 +402,19 @@
       background: rgba(99, 102, 241, 0.08);
     }
 
+    .btn-action-small {
+      padding: 4px 8px;
+      font-size: 9px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .btn-approve { background: #10b981; color: white; }
+    .btn-reject { background: #ef4444; color: white; }
+
     .btn-download {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
       color: white;
       font-weight: 700;
       width: 100%;
@@ -411,7 +427,7 @@
       justify-content: center;
       gap: 6px;
       margin-top: 10px;
-      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
       font-size: 12px;
     }
 
@@ -441,7 +457,7 @@
 
   <div class="main-panel">
     
-    <!-- URL GAS API Config & Diagnostik -->
+    <!-- Konfigurasi URL WebApp GAS API -->
     <div class="config-box">
       <label style="color:#818cf8; font-weight:bold;">URL WebApp Apps Script (GAS API):</label>
       <input type="text" id="gasApiUrl" class="form-control" style="font-size:10px; margin-top:4px;" placeholder="https://script.google.com/macros/s/.../exec" oninput="validateApiUrlInput()">
@@ -452,7 +468,7 @@
     <div id="viewLogin">
       <div class="title-header">
         <h1>Absensi Rajawali</h1>
-        <p>Akses Presensi & Kamera Langsung Web</p>
+        <p>Akses Presensi & Permohonan Ijin Guru</p>
       </div>
 
       <form onsubmit="handleLogin(event)">
@@ -472,14 +488,14 @@
       <button type="button" onclick="useDemoLogin()" class="btn-demo">💡 Mode Uji Coba Lintas Browser (Tanpa GAS)</button>
     </div>
 
-    <!-- 2. VIEW USER DASHBOARD -->
+    <!-- 2. VIEW DASHBOARD -->
     <div id="viewUserDashboard" class="hidden">
       
-      <!-- Banner Header Dinamis -->
+      <!-- Banner Dynamic Portal -->
       <div id="portalBanner" class="portal-banner banner-guru">
         <div>
           <span id="portalRoleTitle" style="font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #34d399;">PORTAL PRESENSI GURU</span>
-          <h2 id="userGreeting" style="font-size: 16px; font-weight: 800; margin-top: 2px;">Hai, User</h2>
+          <h2 id="userGreeting" style="font-size: 15px; font-weight: 800; margin-top: 2px;">Hai, User</h2>
         </div>
         <div style="text-align: right;">
           <span id="userRoleBadge" class="badge-status badge-green">Guru</span>
@@ -487,116 +503,201 @@
         </div>
       </div>
 
-      <!-- Tab Navigasi Admin -->
-      <div id="adminNavTab" class="admin-nav hidden">
-        <button id="btnTabAdmin" onclick="switchTab('admin')" class="btn-tab active">📊 Rekap Durasi Guru</button>
-        <button id="btnTabSelfie" onclick="switchTab('selfie')" class="btn-tab">📷 Absen Saya</button>
+      <!-- NAVIGASI TAB UNTUK GURU -->
+      <div id="guruNavTab" class="sub-nav">
+        <button id="btnTabAbsen" onclick="switchGuruTab('absen')" class="btn-tab active">📷 Absen Selfie</button>
+        <button id="btnTabIjinForm" onclick="switchGuruTab('ijinForm')" class="btn-tab">📝 Ajukan Ijin</button>
+        <button id="btnTabIjinHist" onclick="switchGuruTab('ijinHist')" class="btn-tab">📜 Riwayat Ijin</button>
       </div>
 
-      <!-- TAB 1: Live Clock & Camera Selfie (Khusus Guru / Staf) -->
-      <div id="sectionSelfie">
-        <div class="bento-card">
-          <div class="clock-widget">
-            <div class="clock-title">Waktu Real-Time (WIT)</div>
-            <div id="liveClockDisplay" class="clock-time">--:--:-- WIT</div>
-          </div>
+      <!-- NAVIGASI TAB UNTUK ADMIN -->
+      <div id="adminNavTab" class="sub-nav hidden">
+        <button id="btnTabAdminRecap" onclick="switchAdminTab('recap')" class="btn-tab active">📊 Rekap Durasi</button>
+        <button id="btnTabAdminIjin" onclick="switchAdminTab('ijinApproval')" class="btn-tab">📋 Persetujuan Ijin</button>
+      </div>
 
-          <div class="camera-box">
-            <video id="webcam" autoplay playsinline muted></video>
-            <img id="selfiePreview" src="" class="hidden" alt="Selfie Preview">
-          </div>
+      <!-- SECTION 1: ABSEN SELFIE & GPS (GURU) -->
+      <div id="secAbsen" class="bento-card">
+        <div class="clock-widget">
+          <div class="clock-title">Waktu Real-Time (WIT)</div>
+          <div id="liveClockDisplay" class="clock-time">--:--:-- WIT</div>
+        </div>
 
-          <div style="display: flex; gap: 6px; margin-bottom: 10px;">
-            <button type="button" onclick="startCamera()" class="btn-secondary" style="flex: 1;">📷 Aktifkan Kamera</button>
-            <button type="button" onclick="takeSnap()" class="btn-secondary" style="flex: 1; background: rgba(99,102,241,0.2); color: #818cf8;">📸 Ambil Selfie</button>
-          </div>
+        <div class="camera-box">
+          <video id="webcam" autoplay playsinline muted></video>
+          <img id="selfiePreview" src="" class="hidden" alt="Selfie Preview">
+        </div>
 
-          <div style="font-size: 11px; color: #9ca3af; margin-bottom: 12px;">
-            <strong>GPS:</strong> <span id="gpsStatus">Mendeteksi lokasi...</span>
-          </div>
+        <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+          <button type="button" onclick="startCamera()" class="btn-secondary" style="flex: 1;">📷 Kamera</button>
+          <button type="button" onclick="takeSnap('selfie')" class="btn-secondary" style="flex: 1; background: rgba(99,102,241,0.2); color: #818cf8;">📸 Foto Selfie</button>
+        </div>
 
-          <div style="display: flex; gap: 8px;">
-            <button id="btnCheckIn" onclick="doAttendance('Check-In')" class="btn-primary" style="flex: 1;">Check-In</button>
-            <button id="btnCheckOut" onclick="doAttendance('Check-Out')" class="btn-primary" style="flex: 1; background: #334155;">Check-Out</button>
-          </div>
+        <div style="font-size: 11px; color: #9ca3af; margin-bottom: 12px;">
+          <strong>GPS:</strong> <span id="gpsStatus">Mendeteksi lokasi...</span>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button id="btnCheckIn" onclick="doAttendance('Check-In')" class="btn-primary" style="flex: 1;">Check-In</button>
+          <button id="btnCheckOut" onclick="doAttendance('Check-Out')" class="btn-primary" style="flex: 1; background: #334155;">Check-Out</button>
         </div>
       </div>
 
-      <!-- TAB 2: PANEL REKAP ADMIN & DURASI KERJA GURU -->
-      <div id="sectionAdmin" class="hidden">
-        <div class="bento-card">
-          <h3 style="font-size: 13px; font-weight: 800; margin-bottom: 2px; color: #c084fc;">⏱️ Monitoring Kehadiran Guru & Staf</h3>
-          <p style="font-size: 10px; color: #9ca3af; margin-bottom: 12px;">Merekap jam Check-In, Check-Out, dan durasi kerja.</p>
-          
-          <div class="filter-grid">
-            <div>
-              <label style="font-size: 9px; color: #9ca3af; display: block; margin-bottom: 3px;">Dari Tanggal</label>
-              <input type="date" id="filterStartDate" class="form-control" style="padding: 6px;" onchange="applyAdminFilter()">
-            </div>
-            <div>
-              <label style="font-size: 9px; color: #9ca3af; display: block; margin-bottom: 3px;">Sampai Tanggal</label>
-              <input type="date" id="filterEndDate" class="form-control" style="padding: 6px;" onchange="applyAdminFilter()">
-            </div>
+      <!-- SECTION 2: FORM PENGAJUAN IJIN (GURU) -->
+      <div id="secIjinForm" class="bento-card hidden">
+        <h3 style="font-size: 13px; font-weight: 800; margin-bottom: 4px; color: #fbbf24;">📝 Form Permohonan Ijin / Kendala</h3>
+        <p style="font-size: 10px; color: #9ca3af; margin-bottom: 12px;">Isi data dan sertakan foto bukti (Surat dokter, tugas dinas, dll).</p>
+
+        <form onsubmit="handleIjinSubmit(event)">
+          <div class="form-group">
+            <label>Kategori Ijin</label>
+            <select id="ijinTipe" class="form-control" required>
+              <option value="Ijin Sakit">🤒 Ijin Sakit</option>
+              <option value="Ijin Dinas">💼 Ijin Dinas</option>
+              <option value="Ijin Lainnya">📑 Ijin Lainnya</option>
+            </select>
           </div>
 
-          <div class="filter-grid">
-            <div>
-              <label style="font-size: 9px; color: #9ca3af; display: block; margin-bottom: 3px;">Pilih Guru / Staf</label>
-              <select id="filterNama" class="form-control" style="padding: 6px;" onchange="applyAdminFilter()">
-                <option value="ALL">Semua Guru</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size: 9px; color: #9ca3af; display: block; margin-bottom: 3px;">Status Kehadiran</label>
-              <select id="filterStatus" class="form-control" style="padding: 6px;" onchange="applyAdminFilter()">
-                <option value="ALL">Semua Status</option>
-                <option value="Lengkap">Hadir Lengkap</option>
-                <option value="Belum Check-Out">Belum Check-Out</option>
-              </select>
-            </div>
+          <div class="form-group">
+            <label>Tanggal Ijin</label>
+            <input type="date" id="ijinTanggal" class="form-control" required>
           </div>
 
-          <!-- Summary Stats -->
-          <div class="stat-card-grid">
-            <div class="stat-card">
-              <div id="statTotalGuru" class="stat-value">0</div>
-              <div class="stat-label">Total Guru</div>
-            </div>
-            <div class="stat-card">
-              <div id="statLengkap" class="stat-value" style="color: #34d399;">0</div>
-              <div class="stat-label">Hadir Lengkap</div>
-            </div>
-            <div class="stat-card">
-              <div id="statBelumOut" class="stat-value" style="color: #fbbf24;">0</div>
-              <div class="stat-label">Belum Out</div>
-            </div>
+          <div class="form-group">
+            <label>Keterangan / Alasan</label>
+            <textarea id="ijinKeterangan" class="form-control" rows="2" placeholder="Tuliskan alasan permohonan ijin secara singkat..." required></textarea>
           </div>
 
-          <!-- Tabel Data Absensi & Durasi -->
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Nama & Tanggal</th>
-                  <th>Check-In</th>
-                  <th>Check-Out</th>
-                  <th>Durasi</th>
-                  <th>Status</th>
-                  <th>Bukti</th>
-                </tr>
-              </thead>
-              <tbody id="adminTableBody">
-                <tr>
-                  <td colspan="6" style="text-align: center; color: #9ca3af;">Memuat data...</td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- Kamera & Bukti Foto Ijin -->
+          <div class="form-group">
+            <label>Bukti Foto (Kamera / Unggah Surat)</label>
+            <div class="camera-box" style="height: 160px;">
+              <video id="webcamIjin" autoplay playsinline muted></video>
+              <img id="ijinFotoPreview" src="" class="hidden" alt="Bukti Foto Preview">
+            </div>
+            <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+              <button type="button" onclick="startCamera('ijin')" class="btn-secondary" style="flex: 1;">📷 Aktifkan Kamera</button>
+              <button type="button" onclick="takeSnap('ijin')" class="btn-secondary" style="flex: 1; background: rgba(245,158,11,0.2); color: #fbbf24;">📸 Ambil Foto Bukti</button>
+            </div>
+            <input type="file" id="fileIjinUpload" accept="image/*" class="form-control" style="font-size:10px;" onchange="handleFileIjinUpload(event)">
           </div>
 
-          <!-- Tombol Export PDF -->
-          <button onclick="downloadPdfReport()" class="btn-download" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);">
-            📄 Export Laporan PDF
-          </button>
+          <button type="submit" class="btn-primary btn-amber">✉️ Kirim Permohonan Ijin</button>
+        </form>
+      </div>
+
+      <!-- SECTION 3: RIWAYAT IJIN SAYA (GURU) -->
+      <div id="secIjinHist" class="bento-card hidden">
+        <h3 style="font-size: 13px; font-weight: 800; margin-bottom: 4px; color: #38bdf8;">📜 Status Permohonan Ijin Saya</h3>
+        <p style="font-size: 10px; color: #9ca3af; margin-bottom: 12px;">Pantau persetujuan permohonan ijin dari Admin/Kepala Sekolah.</p>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tgl Ijin</th>
+                <th>Kategori</th>
+                <th>Keterangan</th>
+                <th>Status</th>
+                <th>Bukti</th>
+              </tr>
+            </thead>
+            <tbody id="userIjinTableBody">
+              <tr><td colspan="5" style="text-align:center; color:#9ca3af;">Memuat riwayat...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECTION 4: REKAP DURASI KERJA (ADMIN) -->
+      <div id="secAdminRecap" class="bento-card hidden">
+        <h3 style="font-size: 13px; font-weight: 800; margin-bottom: 2px; color: #c084fc;">⏱️ Monitoring Kehadiran & Durasi</h3>
+        <p style="font-size: 10px; color: #9ca3af; margin-bottom: 12px;">Merekap jam Check-In, Check-Out, dan selisih jam kerja.</p>
+        
+        <div class="filter-grid">
+          <div>
+            <label style="font-size: 9px; color: #9ca3af; display: block; margin-bottom: 3px;">Dari Tanggal</label>
+            <input type="date" id="filterStartDate" class="form-control" style="padding: 6px;" onchange="applyAdminFilter()">
+          </div>
+          <div>
+            <label style="font-size: 9px; color: #9ca3af; display: block; margin-bottom: 3px;">Sampai Tanggal</label>
+            <input type="date" id="filterEndDate" class="form-control" style="padding: 6px;" onchange="applyAdminFilter()">
+          </div>
+        </div>
+
+        <div class="filter-grid">
+          <div>
+            <label style="font-size: 9px; color: #9ca3af; display: block; margin-bottom: 3px;">Guru / Staf</label>
+            <select id="filterNama" class="form-control" style="padding: 6px;" onchange="applyAdminFilter()">
+              <option value="ALL">Semua Guru</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 9px; color: #9ca3af; display: block; margin-bottom: 3px;">Status</label>
+            <select id="filterStatus" class="form-control" style="padding: 6px;" onchange="applyAdminFilter()">
+              <option value="ALL">Semua Status</option>
+              <option value="Lengkap">Hadir Lengkap</option>
+              <option value="Belum Check-Out">Belum Check-Out</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="stat-card-grid">
+          <div class="stat-card">
+            <div id="statTotalGuru" class="stat-value">0</div>
+            <div class="stat-label">Total Guru</div>
+          </div>
+          <div class="stat-card">
+            <div id="statLengkap" class="stat-value" style="color: #34d399;">0</div>
+            <div class="stat-label">Hadir Lengkap</div>
+          </div>
+          <div class="stat-card">
+            <div id="statBelumOut" class="stat-value" style="color: #fbbf24;">0</div>
+            <div class="stat-label">Belum Out</div>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nama & Tgl</th>
+                <th>In</th>
+                <th>Out</th>
+                <th>Durasi</th>
+                <th>Status</th>
+                <th>Bukti</th>
+              </tr>
+            </thead>
+            <tbody id="adminTableBody">
+              <tr><td colspan="6" style="text-align: center; color: #9ca3af;">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <button onclick="downloadPdfReport()" class="btn-download">📄 Export Laporan PDF</button>
+      </div>
+
+      <!-- SECTION 5: PERSETUJUAN / APPROVAL IJIN (ADMIN) -->
+      <div id="secAdminIjin" class="bento-card hidden">
+        <h3 style="font-size: 13px; font-weight: 800; margin-bottom: 2px; color: #fbbf24;">📋 Approval Permohonan Ijin Guru</h3>
+        <p style="font-size: 10px; color: #9ca3af; margin-bottom: 12px;">Verifikasi bukti foto dan setujui / tolak ijin guru.</p>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Guru & Tanggal</th>
+                <th>Kategori & Alasan</th>
+                <th>Bukti Foto</th>
+                <th>Status</th>
+                <th>Keputusan Admin</th>
+              </tr>
+            </thead>
+            <tbody id="adminIjinTableBody">
+              <tr><td colspan="5" style="text-align: center; color: #9ca3af;">Memuat data ijin...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -611,18 +712,15 @@
   var currentUser = null;
   var currentCoords = "";
   var selfieData = "";
+  var ijinFotoData = "";
   var mediaStreamTrack = null;
   var rawAttendanceData = [];
   var processedSummaryData = [];
   var filteredSummaryData = [];
+  var rawIjinData = [];
   var isDemoMode = false;
   
-  // Konfigurasi Radius Sekolah (20 Meter)
-  var schoolConfig = {
-    lat: 1.692649,
-    lng: 128.009278,
-    maxRadius: 20
-  };
+  var schoolConfig = { lat: 1.692656, lng: 128.009276, maxRadius: 20 };
   var currentDistanceMeters = null;
   var todayStatus = { hasCheckedIn: false, hasCheckedOut: false };
 
@@ -632,6 +730,7 @@
       document.getElementById('gasApiUrl').value = savedUrl;
       validateApiUrlInput();
     }
+    document.getElementById('ijinTanggal').value = new Date().toISOString().slice(0, 10);
     initGeolocation();
     initClock();
   };
@@ -641,23 +740,12 @@
     var errBox = document.getElementById('apiUrlError');
     var url = input.value.trim();
 
-    if (!url) {
-      errBox.style.display = 'none';
-      return true;
-    }
-
+    if (!url) { errBox.style.display = 'none'; return true; }
     if (url.includes('/edit') || url.includes('/home') || url.includes('/d/')) {
-      errBox.innerText = "⚠️ URL Salah! Ini adalah URL Editor script. Gunakan URL WebApp yang berakhiran '/exec' dari menu Deploy > New Deployment.";
+      errBox.innerText = "⚠️ URL Salah! Gunakan WebApp URL berakhiran '/exec' dari menu Deploy > New Deployment.";
       errBox.style.display = 'block';
       return false;
     }
-
-    if (!url.endsWith('/exec')) {
-      errBox.innerText = "⚠️ Peringatan: URL Web App Apps Script biasanya berakhiran '/exec'. Periksa kembali URL Anda.";
-      errBox.style.display = 'block';
-      return true;
-    }
-
     errBox.style.display = 'none';
     localStorage.setItem('gas_api_url', url);
     return true;
@@ -665,11 +753,7 @@
 
   function getApiUrl() {
     var urlInput = document.getElementById('gasApiUrl');
-    var url = urlInput ? urlInput.value.trim() : "";
-    if (url && !url.includes('/edit')) {
-      localStorage.setItem('gas_api_url', url);
-    }
-    return url;
+    return urlInput ? urlInput.value.trim() : "";
   }
 
   function callGasApi(action, payload, callback) {
@@ -680,16 +764,11 @@
 
     var apiUrl = getApiUrl();
     if (!apiUrl) {
-      showToast("⚠️ Silakan masukkan URL WebApp Google Apps Script terlebih dahulu!");
+      showToast("⚠️ Masukkan URL WebApp Apps Script terlebih dahulu!");
       return;
     }
 
-    if (apiUrl.includes('/edit')) {
-      showToast("❌ URL salah! Jangan gunakan URL editor /edit. Gunakan URL Web App berakhiran /exec.");
-      return;
-    }
-
-    showToast("Mengirim permintaan ke server...");
+    showToast("Mengirim ke server...");
 
     fetch(apiUrl, {
       method: "POST",
@@ -697,23 +776,17 @@
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({ action: action, payload: payload })
     })
-    .then(function(res) {
-      return res.text();
-    })
+    .then(function(res) { return res.text(); })
     .then(function(text) {
       try {
         var data = JSON.parse(text);
         callback(data);
       } catch (e) {
-        if (text.includes("<!DOCTYPE html>") || text.includes("google.com/service/login")) {
-          showToast("❌ Gagal Login: Server mengembalikan halaman Login Google. Pastikan deployment Apps Script diatur ke 'Who has access: Anyone' & 'Execute as: Me'.");
-        } else {
-          showToast("❌ Respons server tidak valid: " + text.substring(0, 60) + "...");
-        }
+        showToast("❌ Error Respons Server: " + text.substring(0, 50));
       }
     })
     .catch(function(err) {
-      showToast("❌ Error Koneksi API: " + err.message);
+      showToast("❌ Error API: " + err.message);
     });
   }
 
@@ -721,11 +794,6 @@
     e.preventDefault();
     var nama = document.getElementById('loginNama').value.trim();
     var pass = document.getElementById('loginPass').value.trim();
-
-    if (!nama || !pass) {
-      showToast("Nama dan Password wajib diisi!");
-      return;
-    }
 
     callGasApi("login", { nama: nama, pass: pass }, function(res) {
       if (res.success) {
@@ -743,28 +811,27 @@
         var isAdmin = userRole.toLowerCase().includes("admin") || userRole.toLowerCase().includes("kepala");
         var banner = document.getElementById('portalBanner');
         var roleTitle = document.getElementById('portalRoleTitle');
-        var btnSelfie = document.getElementById('btnTabSelfie');
 
         if (isAdmin) {
           banner.className = "portal-banner banner-admin";
           roleTitle.innerText = "DASHBOARD MONITORING ADMIN";
           roleTitle.style.color = "#c084fc";
           document.getElementById('userRoleBadge').className = "badge-status badge-purple";
+          document.getElementById('guruNavTab').classList.add('hidden');
           document.getElementById('adminNavTab').classList.remove('hidden');
-          if (btnSelfie) btnSelfie.classList.add('hidden'); // Sembunyikan tab Absen Saya untuk Admin
-          switchTab('admin');
+          switchAdminTab('recap');
         } else {
           banner.className = "portal-banner banner-guru";
           roleTitle.innerText = "PORTAL PRESENSI GURU";
           roleTitle.style.color = "#34d399";
           document.getElementById('userRoleBadge').className = "badge-status badge-green";
           document.getElementById('adminNavTab').classList.add('hidden');
-          if (btnSelfie) btnSelfie.classList.remove('hidden');
-          switchTab('selfie');
+          document.getElementById('guruNavTab').classList.remove('hidden');
+          switchGuruTab('absen');
         }
 
         updateAttendanceButtons();
-        showToast("✅ Login Berhasil! Selamat Datang.");
+        showToast("✅ Login Berhasil!");
       } else {
         showToast("❌ " + (res.message || "Login Gagal!"));
       }
@@ -781,40 +848,45 @@
     document.getElementById('userGreeting').innerText = "Hai, Guru Demo (Mode Uji Coba)";
     document.getElementById('userRoleBadge').innerText = "Guru (Demo)";
     document.getElementById('adminNavTab').classList.add('hidden');
-    var btnSelfie = document.getElementById('btnTabSelfie');
-    if (btnSelfie) btnSelfie.classList.remove('hidden');
+    document.getElementById('guruNavTab').classList.remove('hidden');
 
-    switchTab('selfie');
+    switchGuruTab('absen');
     updateAttendanceButtons();
     showToast("💡 Masuk Mode Demo Uji Coba Lintas Browser");
   }
 
   function handleDemoApi(action, payload, callback) {
     if (action === "login") {
-      var isUserAdmin = payload.nama.toLowerCase().includes("admin") || payload.nama.toLowerCase().includes("kepala");
       callback({
         success: true,
-        user: { id: payload.nama, nama: payload.nama, role: isUserAdmin ? "Admin" : "Guru" },
+        user: { id: payload.nama, nama: payload.nama, role: payload.nama.toLowerCase().includes("admin") ? "Admin" : "Guru" },
         todayStatus: todayStatus,
         schoolConfig: schoolConfig
       });
     } else if (action === "submitAttendance") {
       if (payload.tipe === "Check-In") todayStatus.hasCheckedIn = true;
       if (payload.tipe === "Check-Out") todayStatus.hasCheckedOut = true;
-      callback({
-        success: true,
-        message: "✅ Absensi " + payload.tipe + " (Demo) Berhasil!",
-        todayStatus: todayStatus
-      });
+      callback({ success: true, message: "✅ Absensi " + payload.tipe + " (Demo) Berhasil!", todayStatus: todayStatus });
+    } else if (action === "submitIjin") {
+      callback({ success: true, message: "✅ Permohonan " + payload.tipeIjin + " (Demo) Berhasil Diajukan!" });
     } else if (action === "getAttendanceData") {
       callback({
         success: true,
         data: [
-          { waktu: new Date().toISOString().slice(0, 10) + " 07:15:00", nama: "Nevi", tipe: "Check-In", gps: "-2.53871,140.70123 (5m)", fotoUrl: "#" },
-          { waktu: new Date().toISOString().slice(0, 10) + " 14:30:00", nama: "Nevi", tipe: "Check-Out", gps: "-2.53871,140.70123 (5m)", fotoUrl: "#" },
-          { waktu: new Date().toISOString().slice(0, 10) + " 07:20:00", nama: "Ahmad", tipe: "Check-In", gps: "-2.53871,140.70123 (8m)", fotoUrl: "#" }
+          { waktu: new Date().toISOString().slice(0, 10) + " 07:15:00", nama: "Nevi", tipe: "Check-In", gps: "1.692656,128.009276 (5m)", fotoUrl: "#" },
+          { waktu: new Date().toISOString().slice(0, 10) + " 14:30:00", nama: "Nevi", tipe: "Check-Out", gps: "1.692656,128.009276 (5m)", fotoUrl: "#" }
         ]
       });
+    } else if (action === "getIjinData") {
+      callback({
+        success: true,
+        data: [
+          { waktu: "2026-09-09 08:00:00", nama: "Nevi", tipeIjin: "Ijin Sakit", keterangan: "Demam & Flu", fotoUrl: "#", status: "Menunggu Approval", tanggalIjin: "2026-09-09" },
+          { waktu: "2026-09-08 07:30:00", nama: "Ahmad", tipeIjin: "Ijin Dinas", keterangan: "Bimtek Kurikulum", fotoUrl: "#", status: "Disetujui", tanggalIjin: "2026-09-08" }
+        ]
+      });
+    } else if (action === "updateIjinStatus") {
+      callback({ success: true, message: "✅ Status ijin berhasil diubah menjadi: " + payload.status });
     }
   }
 
@@ -831,58 +903,250 @@
     var btnOut = document.getElementById('btnCheckOut');
 
     if (btnIn) {
-      if (todayStatus.hasCheckedIn) {
-        btnIn.disabled = true;
-        btnIn.innerText = "Check-In (Sudah)";
-      } else {
-        btnIn.disabled = false;
-        btnIn.innerText = "Check-In";
-      }
+      btnIn.disabled = todayStatus.hasCheckedIn;
+      btnIn.innerText = todayStatus.hasCheckedIn ? "Check-In (Sudah)" : "Check-In";
     }
-
     if (btnOut) {
-      if (todayStatus.hasCheckedOut) {
-        btnOut.disabled = true;
-        btnOut.innerText = "Check-Out (Sudah)";
-      } else {
-        btnOut.disabled = false;
-        btnOut.innerText = "Check-Out";
-      }
+      btnOut.disabled = todayStatus.hasCheckedOut;
+      btnOut.innerText = todayStatus.hasCheckedOut ? "Check-Out (Sudah)" : "Check-Out";
     }
   }
 
+  function switchGuruTab(tab) {
+    document.getElementById('btnTabAbsen').className = "btn-tab " + (tab === 'absen' ? 'active' : '');
+    document.getElementById('btnTabIjinForm').className = "btn-tab " + (tab === 'ijinForm' ? 'active' : '');
+    document.getElementById('btnTabIjinHist').className = "btn-tab " + (tab === 'ijinHist' ? 'active' : '');
+
+    document.getElementById('secAbsen').classList.toggle('hidden', tab !== 'absen');
+    document.getElementById('secIjinForm').classList.toggle('hidden', tab !== 'ijinForm');
+    document.getElementById('secIjinHist').classList.toggle('hidden', tab !== 'ijinHist');
+
+    stopCameraStream();
+    if (tab === 'absen') startCamera('selfie');
+    if (tab === 'ijinForm') startCamera('ijin');
+    if (tab === 'ijinHist') loadUserIjinHistory();
+  }
+
+  function switchAdminTab(tab) {
+    document.getElementById('btnTabAdminRecap').className = "btn-tab " + (tab === 'recap' ? 'active' : '');
+    document.getElementById('btnTabAdminIjin').className = "btn-tab " + (tab === 'ijinApproval' ? 'active' : '');
+
+    document.getElementById('secAdminRecap').classList.toggle('hidden', tab !== 'recap');
+    document.getElementById('secAdminIjin').classList.toggle('hidden', tab !== 'ijinApproval');
+
+    stopCameraStream();
+    if (tab === 'recap') loadAdminData();
+    if (tab === 'ijinApproval') loadAdminIjinApproval();
+  }
+
+  function stopCameraStream() {
+    if (mediaStreamTrack) {
+      mediaStreamTrack.getTracks().forEach(function(t) { t.stop(); });
+    }
+  }
+
+  function startCamera(mode) {
+    stopCameraStream();
+    var videoId = (mode === 'ijin') ? 'webcamIjin' : 'webcam';
+    var imgId = (mode === 'ijin') ? 'ijinFotoPreview' : 'selfiePreview';
+
+    var video = document.getElementById(videoId);
+    video.classList.remove('hidden');
+    document.getElementById(imgId).classList.add('hidden');
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+        .then(function(stream) {
+          mediaStreamTrack = stream;
+          video.srcObject = stream;
+        })
+        .catch(function(err) { showToast("❌ Kamera gagal: " + err.message); });
+    }
+  }
+
+  function takeSnap(mode) {
+    var videoId = (mode === 'ijin') ? 'webcamIjin' : 'webcam';
+    var imgId = (mode === 'ijin') ? 'ijinFotoPreview' : 'selfiePreview';
+    var video = document.getElementById(videoId);
+
+    if (video.videoWidth === 0) {
+      showToast("⚠️ Buka kamera terlebih dahulu!");
+      return;
+    }
+    var canvas = document.createElement('canvas');
+    canvas.width = 320;
+    canvas.height = 320;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, 320, 320);
+
+    var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+    if (mode === 'ijin') {
+      ijinFotoData = dataUrl;
+    } else {
+      selfieData = dataUrl;
+    }
+
+    var img = document.getElementById(imgId);
+    img.src = dataUrl;
+    img.classList.remove('hidden');
+    video.classList.add('hidden');
+    stopCameraStream();
+    showToast("📸 Foto Berhasil Diambil!");
+  }
+
+  function handleFileIjinUpload(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+
+    var reader = new FileReader();
+    reader.onload = function(evt) {
+      ijinFotoData = evt.target.result;
+      var img = document.getElementById('ijinFotoPreview');
+      img.src = ijinFotoData;
+      img.classList.remove('hidden');
+      document.getElementById('webcamIjin').classList.add('hidden');
+      stopCameraStream();
+      showToast("📁 Berkas Foto Terpilih!");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleIjinSubmit(e) {
+    e.preventDefault();
+    var tipe = document.getElementById('ijinTipe').value;
+    var tgl = document.getElementById('ijinTanggal').value;
+    var ket = document.getElementById('ijinKeterangan').value.trim();
+
+    if (!ijinFotoData) {
+      showToast("📸 Wajib melampirkan bukti foto!");
+      return;
+    }
+
+    callGasApi("submitIjin", {
+      userId: currentUser.id,
+      tipeIjin: tipe,
+      tanggalIjin: tgl,
+      keterangan: ket,
+      fotoData: ijinFotoData
+    }, function(res) {
+      if (res.success) {
+        showToast(res.message);
+        document.getElementById('ijinKeterangan').value = "";
+        ijinFotoData = "";
+        document.getElementById('ijinFotoPreview').classList.add('hidden');
+        switchGuruTab('ijinHist');
+      } else {
+        showToast("❌ " + res.message);
+      }
+    });
+  }
+
+  function loadUserIjinHistory() {
+    callGasApi("getIjinData", { userId: currentUser.id }, function(res) {
+      if (res.success) {
+        renderUserIjinTable(res.data || []);
+      }
+    });
+  }
+
+  function renderUserIjinTable(data) {
+    var tbody = document.getElementById('userIjinTableBody');
+    tbody.innerHTML = "";
+
+    if (data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af;">Belum ada riwayat permohonan.</td></tr>';
+      return;
+    }
+
+    data.forEach(function(row) {
+      var badgeClass = "badge-amber";
+      if (row.status === "Disetujui") badgeClass = "badge-green";
+      if (row.status === "Ditolak") badgeClass = "badge-red";
+
+      var fotoCell = row.fotoUrl && row.fotoUrl.startsWith("http")
+        ? `<a href="${row.fotoUrl}" target="_blank" style="color:#818cf8; text-decoration:underline;">Lihat</a>`
+        : `-`;
+
+      var tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.tanggalIjin}</td>
+        <td><strong>${row.tipeIjin}</strong></td>
+        <td>${row.keterangan}</td>
+        <td><span class="badge-status ${badgeClass}">${row.status}</span></td>
+        <td>${fotoCell}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function loadAdminIjinApproval() {
+    callGasApi("getIjinData", { userId: "ALL" }, function(res) {
+      if (res.success) {
+        renderAdminIjinTable(res.data || []);
+      }
+    });
+  }
+
+  function renderAdminIjinTable(data) {
+    var tbody = document.getElementById('adminIjinTableBody');
+    tbody.innerHTML = "";
+
+    if (data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af;">Tidak ada permohonan ijin.</td></tr>';
+      return;
+    }
+
+    data.forEach(function(row) {
+      var badgeClass = "badge-amber";
+      if (row.status === "Disetujui") badgeClass = "badge-green";
+      if (row.status === "Ditolak") badgeClass = "badge-red";
+
+      var fotoCell = row.fotoUrl && row.fotoUrl.startsWith("http")
+        ? `<a href="${row.fotoUrl}" target="_blank" style="color:#818cf8; text-decoration:underline;">Bukti Foto</a>`
+        : `-`;
+
+      var actionBtns = row.status === "Menunggu Approval"
+        ? `<button onclick="updateIjinApproval('${row.waktu}', '${row.nama}', 'Disetujui')" class="btn-action-small btn-approve">Setujui</button> 
+           <button onclick="updateIjinApproval('${row.waktu}', '${row.nama}', 'Ditolak')" class="btn-action-small btn-reject">Tolak</button>`
+        : `<small style="color:#9ca3af;">Selesai</small>`;
+
+      var tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${row.nama}</strong><br><small style="color:#9ca3af;">${row.tanggalIjin}</small></td>
+        <td><strong>${row.tipeIjin}</strong><br><small style="color:#e5e7eb;">${row.keterangan}</small></td>
+        <td>${fotoCell}</td>
+        <td><span class="badge-status ${badgeClass}">${row.status}</span></td>
+        <td>${actionBtns}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function updateIjinApproval(waktu, nama, newStatus) {
+    callGasApi("updateIjinStatus", {
+      waktu: waktu,
+      nama: nama,
+      status: newStatus
+    }, function(res) {
+      if (res.success) {
+        showToast(res.message);
+        loadAdminIjinApproval();
+      } else {
+        showToast("❌ " + res.message);
+      }
+    });
+  }
+
   function doAttendance(tipe) {
-    var userRole = currentUser ? currentUser.role : "Guru";
-    var isAdmin = userRole.toLowerCase().includes("admin") || userRole.toLowerCase().includes("kepala");
-
-    if (isAdmin) {
-      showToast("❌ Role Admin tidak perlu melakukan absensi Check-In / Check-Out.");
-      return;
-    }
-
-    if (tipe === "Check-In" && todayStatus.hasCheckedIn) {
-      showToast("❌ Anda sudah melakukan Check-In hari ini!");
-      return;
-    }
-    if (tipe === "Check-Out" && todayStatus.hasCheckedOut) {
-      showToast("❌ Anda sudah melakukan Check-Out hari ini!");
-      return;
-    }
-
     if (!selfieData) {
       showToast("📸 Wajib ambil foto selfie terlebih dahulu!");
       return;
     }
 
-    if (!isDemoMode) {
-      if (currentDistanceMeters === null) {
-        showToast("⚠️ Lokasi GPS belum terdeteksi. Izinkan akses GPS browser Anda!");
-        return;
-      }
-      if (currentDistanceMeters > schoolConfig.maxRadius) {
-        showToast("❌ Berada di luar area sekolah (" + Math.round(currentDistanceMeters) + "m). Maksimum " + schoolConfig.maxRadius + "m!");
-        return;
-      }
+    if (!isDemoMode && currentDistanceMeters > schoolConfig.maxRadius) {
+      showToast("❌ Berada di luar area sekolah (" + Math.round(currentDistanceMeters) + "m)!");
+      return;
     }
 
     callGasApi("submitAttendance", {
@@ -904,50 +1168,6 @@
         showToast("❌ " + res.message);
       }
     });
-  }
-
-  function startCamera() {
-    var video = document.getElementById('webcam');
-    video.classList.remove('hidden');
-    document.getElementById('selfiePreview').classList.add('hidden');
-
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
-        .then(function(stream) {
-          mediaStreamTrack = stream;
-          video.srcObject = stream;
-          showToast("📷 Kamera Diaktifkan");
-        })
-        .catch(function(err) {
-          showToast("❌ Kamera gagal dibuka: " + err.message);
-        });
-    } else {
-      showToast("❌ Browser tidak mendukung WebRTC Kamera.");
-    }
-  }
-
-  function takeSnap() {
-    var video = document.getElementById('webcam');
-    if (video.videoWidth === 0) {
-      showToast("⚠️ Buka/Aktifkan kamera terlebih dahulu!");
-      return;
-    }
-    var canvas = document.createElement('canvas');
-    canvas.width = 300;
-    canvas.height = 300;
-    var ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, 300, 300);
-    selfieData = canvas.toDataURL('image/jpeg', 0.85);
-
-    var img = document.getElementById('selfiePreview');
-    img.src = selfieData;
-    img.classList.remove('hidden');
-    video.classList.add('hidden');
-
-    if (mediaStreamTrack) {
-      mediaStreamTrack.getTracks().forEach(function(t) { t.stop(); });
-    }
-    showToast("📸 Foto Selfie Berhasil Diambil!");
   }
 
   function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -979,13 +1199,7 @@
         }
       }, function(err) {
         document.getElementById('gpsStatus').innerText = "Gagal GPS: " + err.message;
-      }, {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      });
-    } else {
-      document.getElementById('gpsStatus').innerText = "Geolocation tidak didukung browser";
+      }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
     }
   }
 
@@ -996,43 +1210,6 @@
     }, 1000);
   }
 
-  function switchTab(tab) {
-    var btnSelfie = document.getElementById('btnTabSelfie');
-    var btnAdmin = document.getElementById('btnTabAdmin');
-    var secSelfie = document.getElementById('sectionSelfie');
-    var secAdmin = document.getElementById('sectionAdmin');
-
-    var userRole = currentUser ? currentUser.role : "Guru";
-    var isAdmin = userRole.toLowerCase().includes("admin") || userRole.toLowerCase().includes("kepala");
-
-    if (tab === 'admin' && !isAdmin) {
-      showToast("❌ Akses Ditolak! Hanya role Admin yang dapat membuka rekapitulasi.");
-      return;
-    }
-
-    if (tab === 'selfie' && isAdmin) {
-      showToast("❌ Role Admin tidak perlu melakukan absensi Check-In / Check-Out.");
-      return;
-    }
-
-    if (tab === 'selfie') {
-      if (btnSelfie) btnSelfie.classList.add('active');
-      if (btnAdmin) btnAdmin.classList.remove('active');
-      secSelfie.classList.remove('hidden');
-      secAdmin.classList.add('hidden');
-      startCamera();
-    } else {
-      if (btnAdmin) btnAdmin.classList.add('active');
-      if (btnSelfie) btnSelfie.classList.remove('active');
-      secAdmin.classList.remove('hidden');
-      secSelfie.classList.add('hidden');
-      if (mediaStreamTrack) {
-        mediaStreamTrack.getTracks().forEach(function(t) { t.stop(); });
-      }
-      loadAdminData();
-    }
-  }
-
   function loadAdminData() {
     callGasApi("getAttendanceData", {}, function(res) {
       if (res.success) {
@@ -1040,16 +1217,12 @@
         processedSummaryData = computeDurationSummary(rawAttendanceData);
         populateNamaDropdown(processedSummaryData);
         applyAdminFilter();
-        showToast("📊 Data Rekapitasi Diperbarui");
-      } else {
-        showToast("❌ " + (res.message || "Gagal memuat rekap"));
       }
     });
   }
 
   function computeDurationSummary(records) {
     var groups = {};
-
     records.forEach(function(r) {
       if (!r.waktu) return;
       var timeParts = r.waktu.split(" ");
@@ -1057,20 +1230,10 @@
       var key = dateStr + "___" + r.nama;
 
       if (!groups[key]) {
-        groups[key] = {
-          tanggal: dateStr,
-          nama: r.nama,
-          checkInStr: null,
-          checkInTime: null,
-          checkInFoto: null,
-          checkOutStr: null,
-          checkOutTime: null,
-          checkOutFoto: null
-        };
+        groups[key] = { tanggal: dateStr, nama: r.nama, checkInStr: null, checkInTime: null, checkInFoto: null, checkOutStr: null, checkOutTime: null, checkOutFoto: null };
       }
 
       var timeDate = new Date(r.waktu.replace(/-/g, "/"));
-
       if (r.tipe === "Check-In") {
         if (!groups[key].checkInTime || timeDate < groups[key].checkInTime) {
           groups[key].checkInTime = timeDate;
@@ -1095,38 +1258,19 @@
 
       if (g.checkInTime && g.checkOutTime) {
         var diffMs = g.checkOutTime - g.checkInTime;
-        if (diffMs < 0) diffMs = 0;
         var diffMins = Math.floor(diffMs / (1000 * 60));
-        var hours = Math.floor(diffMins / 60);
-        var mins = diffMins % 60;
-        durasiStr = hours + " Jam " + mins + " Min";
+        durasiStr = Math.floor(diffMins / 60) + " Jam " + (diffMins % 60) + " Min";
         status = "Hadir Lengkap";
         badgeClass = "badge-green";
       } else if (g.checkInTime && !g.checkOutTime) {
         status = "Belum Check-Out";
         badgeClass = "badge-amber";
-      } else if (!g.checkInTime && g.checkOutTime) {
-        status = "Hanya Check-Out";
-        badgeClass = "badge-red";
       }
 
-      summaryList.push({
-        tanggal: g.tanggal,
-        nama: g.nama,
-        checkIn: g.checkInStr || "-",
-        checkOut: g.checkOutStr || "-",
-        durasi: durasiStr,
-        status: status,
-        badgeClass: badgeClass,
-        fotoCheckIn: g.checkInFoto,
-        fotoCheckOut: g.checkOutFoto
-      });
+      summaryList.push({ tanggal: g.tanggal, nama: g.nama, checkIn: g.checkInStr || "-", checkOut: g.checkOutStr || "-", durasi: durasiStr, status: status, badgeClass: badgeClass, fotoCheckIn: g.checkInFoto, fotoCheckOut: g.checkOutFoto });
     });
 
-    summaryList.sort(function(a, b) {
-      return b.tanggal.localeCompare(a.tanggal);
-    });
-
+    summaryList.sort(function(a, b) { return b.tanggal.localeCompare(a.tanggal); });
     return summaryList;
   }
 
@@ -1134,9 +1278,7 @@
     var selectNama = document.getElementById('filterNama');
     var uniqueNames = [];
     summaryData.forEach(function(item) {
-      if (item.nama && !uniqueNames.includes(item.nama)) {
-        uniqueNames.push(item.nama);
-      }
+      if (item.nama && !uniqueNames.includes(item.nama)) uniqueNames.push(item.nama);
     });
 
     var currentSelected = selectNama.value;
@@ -1157,10 +1299,7 @@
     var selectedStatus = document.getElementById('filterStatus').value;
 
     filteredSummaryData = processedSummaryData.filter(function(row) {
-      var matchDate = true;
-      var matchNama = true;
-      var matchStatus = true;
-
+      var matchDate = true, matchNama = true, matchStatus = true;
       if (startDate && row.tanggal < startDate) matchDate = false;
       if (endDate && row.tanggal > endDate) matchDate = false;
       if (selectedNama !== "ALL" && row.nama !== selectedNama) matchNama = false;
@@ -1168,7 +1307,6 @@
         if (selectedStatus === "Lengkap" && row.status !== "Hadir Lengkap") matchStatus = false;
         if (selectedStatus === "Belum Check-Out" && row.status !== "Belum Check-Out") matchStatus = false;
       }
-
       return matchDate && matchNama && matchStatus;
     });
 
@@ -1178,24 +1316,18 @@
   function renderAdminTable(data) {
     var tbody = document.getElementById('adminTableBody');
     tbody.innerHTML = "";
-
-    var countLengkap = 0;
-    var countBelumOut = 0;
+    var countLengkap = 0, countBelumOut = 0;
 
     if (data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #9ca3af;">Tidak ada data sesuai filter.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #9ca3af;">Tidak ada data.</td></tr>';
     } else {
       data.forEach(function(row) {
         if (row.status === "Hadir Lengkap") countLengkap++;
         if (row.status === "Belum Check-Out") countBelumOut++;
 
         var tr = document.createElement('tr');
-        var fotoInCell = row.fotoCheckIn && row.fotoCheckIn.startsWith("http")
-          ? `<a href="${row.fotoCheckIn}" target="_blank" style="color: #34d399; text-decoration: underline;">In</a>`
-          : `-`;
-        var fotoOutCell = row.fotoCheckOut && row.fotoCheckOut.startsWith("http")
-          ? `<a href="${row.fotoCheckOut}" target="_blank" style="color: #c084fc; text-decoration: underline;">Out</a>`
-          : `-`;
+        var fotoInCell = row.fotoCheckIn ? `<a href="${row.fotoCheckIn}" target="_blank" style="color: #34d399; text-decoration: underline;">In</a>` : `-`;
+        var fotoOutCell = row.fotoCheckOut ? `<a href="${row.fotoCheckOut}" target="_blank" style="color: #c084fc; text-decoration: underline;">Out</a>` : `-`;
 
         tr.innerHTML = `
           <td><strong>${row.nama}</strong><br><small style="color:#9ca3af;">${row.tanggal}</small></td>
@@ -1215,93 +1347,35 @@
   }
 
   function downloadPdfReport() {
-    var userRole = currentUser ? currentUser.role : "Guru";
-    if (!userRole.toLowerCase().includes("admin") && !userRole.toLowerCase().includes("kepala")) {
-      showToast("❌ Akses Ditolak! Hanya Admin yang dapat mengekspor laporan.");
-      return;
-    }
-
     if (filteredSummaryData.length === 0) {
-      showToast("⚠️ Tidak ada data untuk diekspor ke PDF!");
+      showToast("⚠️ Tidak ada data untuk diekspor!");
       return;
     }
 
     var printWindow = window.open('', '_blank');
-    var startDate = document.getElementById('filterStartDate').value || 'Semua Tanggal';
-    var endDate = document.getElementById('filterEndDate').value || 'Semua Tanggal';
-
     var rowsHtml = '';
     filteredSummaryData.forEach(function(row, idx) {
       rowsHtml += `
         <tr>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${idx + 1}</td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px;">${row.tanggal}</td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px;"><strong>${row.nama}</strong></td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #059669; font-weight: bold;">${row.checkIn}</td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #dc2626; font-weight: bold;">${row.checkOut}</td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; font-weight: bold; color: #4f46e5;">${row.durasi}</td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">${row.status}</td>
+          <td style="border:1px solid #cbd5e1; padding:8px; text-align:center;">${idx + 1}</td>
+          <td style="border:1px solid #cbd5e1; padding:8px;">${row.tanggal}</td>
+          <td style="border:1px solid #cbd5e1; padding:8px;"><strong>${row.nama}</strong></td>
+          <td style="border:1px solid #cbd5e1; padding:8px; text-align:center;">${row.checkIn}</td>
+          <td style="border:1px solid #cbd5e1; padding:8px; text-align:center;">${row.checkOut}</td>
+          <td style="border:1px solid #cbd5e1; padding:8px; text-align:center;">${row.durasi}</td>
+          <td style="border:1px solid #cbd5e1; padding:8px; text-align:center;">${row.status}</td>
         </tr>
       `;
     });
 
     var htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Laporan Kehadiran Guru Sekolah Rajawali</title>
-        <style>
-          body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; margin: 20px; color: #0f172a; }
-          .header { text-align: center; margin-bottom: 20px; border-bottom: 3px solid #6366f1; padding-bottom: 12px; }
-          .header h1 { margin: 0; font-size: 22px; color: #4f46e5; text-transform: uppercase; letter-spacing: 1px; }
-          .header p { margin: 4px 0 0 0; font-size: 13px; color: #64748b; font-weight: bold; }
-          .meta { margin-bottom: 15px; font-size: 12px; display: flex; justify-content: space-between; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
-          table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
-          th { background-color: #4f46e5; color: white; border: 1px solid #3730a3; padding: 10px; text-align: center; font-weight: bold; text-transform: uppercase; }
-          .footer { margin-top: 30px; text-align: right; font-size: 11px; color: #64748b; }
-          @media print {
-            body { margin: 0; }
-            @page { size: A4 portrait; margin: 12mm; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>SEKOLAH RAJAWALI</h1>
-          <p>LAPORAN REKAPITULASI KEHADIRAN & DURASI KERJA GURU / STAF</p>
-        </div>
-        <div class="meta">
-          <div><strong>Periode Filter:</strong> ${startDate} s/d ${endDate}</div>
-          <div><strong>Tanggal Cetak:</strong> ${new Date().toLocaleString('id-ID')} WIT</div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Tanggal</th>
-              <th>Nama Guru / Staf</th>
-              <th>Jam Check-In</th>
-              <th>Jam Check-Out</th>
-              <th>Durasi Kehadiran</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-        </table>
-        <div class="footer">
-          <p>Laporan Resmi Disetujui Oleh Sistem Absensi Rajawali</p>
-        </div>
-        <script>
-          window.onload = function() {
-            window.print();
-          };
-        <\/script>
-      </body>
-      </html>
+      <!DOCTYPE html><html><head><title>Laporan Kehadiran Rajawali</title>
+      <style>body{font-family:sans-serif;margin:20px;}.header{text-align:center;border-bottom:2px solid #4f46e5;padding-bottom:10px;}table{width:100%;border-collapse:collapse;margin-top:15px;font-size:11px;}th{background:#4f46e5;color:white;padding:8px;}</style></head>
+      <body><div class="header"><h1>SEKOLAH RAJAWALI</h1><p>LAPORAN KEHADIRAN & DURASI KERJA GURU</p></div>
+      <table><thead><tr><th>No</th><th>Tanggal</th><th>Nama Guru</th><th>Check-In</th><th>Check-Out</th><th>Durasi</th><th>Status</th></tr></thead>
+      <tbody>${rowsHtml}</tbody></table>
+      <script>window.onload=function(){window.print();};<\/script></body></html>
     `;
-
     printWindow.document.write(htmlContent);
     printWindow.document.close();
   }
