@@ -12,7 +12,8 @@ const CONFIG = {
   TIMEZONE: "GMT+9", // WIT (Waktu Indonesia Timur)
   SCHOOL_LAT: 1.692656,
   SCHOOL_LNG: 128.009276,
-  MAX_RADIUS_METERS: 20
+  MAX_RADIUS_METERS: 20,
+  JAM_MASUK_MAX: "07:01" // Batas Toleransi Jam Masuk
 };
 
 /**
@@ -60,26 +61,36 @@ function initialSetup() {
       sheetConfig.appendRow(["SCHOOL_LNG", CONFIG.SCHOOL_LNG, "Longitude Koordinat Utama Sekolah"]);
       sheetConfig.appendRow(["MAX_RADIUS_METERS", CONFIG.MAX_RADIUS_METERS, "Radius Maksimal Jarak Absensi (Meter)"]);
       sheetConfig.appendRow(["FOLDER_ID", CONFIG.FOLDER_ID, "ID Folder Google Drive Tempat Foto Selfie"]);
+      sheetConfig.appendRow(["JAM_MASUK_MAX", CONFIG.JAM_MASUK_MAX, "Batas Waktu Maksimal Check-In Tanpa Keterangan Terlambat (Format HH:mm)"]);
+    } else {
+      // Cek apakah parameter JAM_MASUK_MAX sudah ada
+      var configData = sheetConfig.getDataRange().getValues();
+      var hasJamMasuk = configData.some(function(r) { return r[0] === "JAM_MASUK_MAX"; });
+      if (!hasJamMasuk) {
+        sheetConfig.appendRow(["JAM_MASUK_MAX", CONFIG.JAM_MASUK_MAX, "Batas Waktu Maksimal Check-In Tanpa Keterangan Terlambat (Format HH:mm)"]);
+      }
     }
     
-    // 2. Setup Sheet Absensi (Ditambahkan kolom Durasi Kerja)
+    // 2. Setup Sheet Absensi (Kolom Ke-7: Status Kehadiran)
     var sheetAbsensi = ss.getSheetByName("Absensi");
     if (!sheetAbsensi) {
       sheetAbsensi = ss.insertSheet("Absensi");
     }
 
     if (sheetAbsensi.getLastRow() === 0) {
-      sheetAbsensi.appendRow(["Tanggal & Waktu", "ID / Nama User", "Tipe Absen", "Koordinat GPS", "Link Foto Drive", "Durasi Kerja"]);
-      var headerAbsensi = sheetAbsensi.getRange(1, 1, 1, 6);
+      sheetAbsensi.appendRow(["Tanggal & Waktu", "ID / Nama User", "Tipe Absen", "Koordinat GPS", "Link Foto Drive", "Durasi Kerja", "Status Kehadiran"]);
+      var headerAbsensi = sheetAbsensi.getRange(1, 1, 1, 7);
       headerAbsensi.setFontWeight("bold")
                    .setBackground("#6366f1")
                    .setFontColor("#ffffff");
       sheetAbsensi.setFrozenRows(1);
     } else {
-      // Pastikan header kolom ke-6 bernama Durasi Kerja jika belum ada
-      var currentHeader = sheetAbsensi.getRange(1, 1, 1, 6).getValues()[0];
+      var currentHeader = sheetAbsensi.getRange(1, 1, 1, 7).getValues()[0];
       if (!currentHeader[5] || currentHeader[5] === "") {
         sheetAbsensi.getRange(1, 6).setValue("Durasi Kerja").setFontWeight("bold").setBackground("#6366f1").setFontColor("#ffffff");
+      }
+      if (!currentHeader[6] || currentHeader[6] === "") {
+        sheetAbsensi.getRange(1, 7).setValue("Status Kehadiran").setFontWeight("bold").setBackground("#6366f1").setFontColor("#ffffff");
       }
     }
 
@@ -97,7 +108,6 @@ function initialSetup() {
                     .setFontColor("#ffffff");
       sheetUser.setFrozenRows(1);
 
-      // Data Akun Default
       sheetUser.appendRow(["Nevi", "123456", "Guru", "", "", ""]);
       sheetUser.appendRow(["Ahmad", "123456", "Staf TU", "", "", ""]);
       sheetUser.appendRow(["Admin", "admin123", "Kepala Sekolah", "", "", ""]);
