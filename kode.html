@@ -1,6 +1,7 @@
 /**
  * ==========================================
  * Code.gs - REST API Backend & Google Drive Storage
+ * Dynamic Config & Management Permohonan Ijin
  * ==========================================
  */
 
@@ -24,6 +25,12 @@ function doPost(e) {
       result = handleSubmitAttendance(payload.userId, payload.tipe, payload.selfieData, payload.coords);
     } else if (action === "getAttendanceData") {
       result = handleGetAttendanceData();
+    } else if (action === "submitIjin") {
+      result = handleSubmitIjin(payload.userId, payload.tipeIjin, payload.keterangan, payload.fotoData, payload.tanggalIjin);
+    } else if (action === "getIjinData") {
+      result = handleGetIjinData(payload.userId);
+    } else if (action === "updateIjinStatus") {
+      result = handleUpdateIjinStatus(payload.waktu, payload.nama, payload.status);
     }
 
     return ContentService.createTextOutput(JSON.stringify(result))
@@ -48,12 +55,51 @@ function doGet(e) {
     } else if (action === "getAttendanceData") {
       var res = handleGetAttendanceData();
       return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+    } else if (action === "getIjinData") {
+      var res = handleGetIjinData(params.userId);
+      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
     }
 
-    return ContentService.createTextOutput("REST API Absensi Rajawali Aktif!");
+    return ContentService.createTextOutput("REST API Absensi & Ijin Rajawali Aktif!");
   } catch (err) {
     return ContentService.createTextOutput("Error: " + err.message);
   }
+}
+
+function getConfig() {
+  var config = {
+    APP_TITLE: CONFIG.APP_TITLE || "Aplikasi Absensi Rajawali",
+    TIMEZONE: CONFIG.TIMEZONE || "GMT+9",
+    SCHOOL_LAT: CONFIG.SCHOOL_LAT || 1.692656,
+    SCHOOL_LNG: CONFIG.SCHOOL_LNG || 128.009276,
+    MAX_RADIUS_METERS: CONFIG.MAX_RADIUS_METERS || 20,
+    FOLDER_ID: CONFIG.FOLDER_ID || ""
+  };
+
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("Config");
+    if (!sheet) return config;
+
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      var key = String(data[i][0]).trim();
+      var val = data[i][1];
+
+      if (key && val !== "") {
+        if (key === "SCHOOL_LAT" || key === "SCHOOL_LNG" || key === "MAX_RADIUS_METERS") {
+          var numVal = parseFloat(val);
+          if (!isNaN(numVal)) config[key] = numVal;
+        } else {
+          config[key] = String(val).trim();
+        }
+      }
+    }
+  } catch (e) {
+    Logger.log("Gagal membaca Sheet Config: " + e.message);
+  }
+
+  return config;
 }
 
 function handleLogin(nama, pass) {
@@ -66,7 +112,7 @@ function handleLogin(nama, pass) {
     var sheet = ss.getSheetByName("User");
 
     if (!sheet) {
-      return { success: false, message: "Sheet 'User' belum ditemukan! Silakan jalankan tesOtorisasiDrive() / initialSetup() pada setup.gs." };
+      return { success: false, message: "Sheet 'User' belum ditemukan! Silakan jalankan tesOtorisasiDrive() pada setup.gs." };
     }
 
     var data = sheet.getDataRange().getValues();
@@ -84,7 +130,6 @@ function handleLogin(nama, pass) {
 
       if (sheetNama.toLowerCase() === inputNama && sheetPass === inputPass) {
         var todayStatus = getTodayUserAttendance(sheetNama);
-        
         var userSchoolConfig = getUserSchoolConfig(sheetNama);
 
         return {
@@ -100,21 +145,19 @@ function handleLogin(nama, pass) {
       }
     }
 
-    return { success: false, message: "Nama Pengguna atau Password salah! Periksa huruf kapital dan data di Sheet 'User'." };
+    return { success: false, message: "Nama Pengguna atau Password salah!" };
 
   } catch (err) {
     return { success: false, message: "Gagal verifikasi login: " + err.message };
   }
 }
 
-/**
- * Membaca konfigurasi GPS Sekolah langsung dari Sheet User berdasarkan Nama User
- */
 function getUserSchoolConfig(userId) {
+  var globalConfig = getConfig();
   var config = {
-    lat: CONFIG.SCHOOL_LAT || -2.53871,
-    lng: CONFIG.SCHOOL_LNG || 140.70123,
-    maxRadius: CONFIG.MAX_RADIUS_METERS || 20
+    lat: globalConfig.SCHOOL_LAT,
+    lng: globalConfig.SCHOOL_LNG,
+    maxRadius: globalConfig.MAX_RADIUS_METERS
   };
 
   try {
@@ -148,12 +191,13 @@ function getUserSchoolConfig(userId) {
 function getTodayUserAttendance(userId) {
   var status = { hasCheckedIn: false, hasCheckedOut: false };
   try {
+    var globalConfig = getConfig();
     var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
     var sheet = ss.getSheetByName("Absensi");
     if (!sheet) return status;
 
     var data = sheet.getDataRange().getValues();
-    var todayStr = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, "yyyy-MM-dd");
+    var todayStr = Utilities.formatDate(new Date(), globalConfig.TIMEZONE, "yyyy-MM-dd");
 
     for (var i = 1; i < data.length; i++) {
       var rawTime = data[i][0];
@@ -162,7 +206,7 @@ function getTodayUserAttendance(userId) {
       var dateStr = "";
 
       if (rawTime instanceof Date) {
-        dateStr = Utilities.formatDate(rawTime, CONFIG.TIMEZONE, "yyyy-MM-dd");
+        dateStr = Utilities.formatDate(rawTime, globalConfig.TIMEZONE, "yyyy-MM-dd");
       } else {
         dateStr = String(rawTime).split(" ")[0];
       }
@@ -182,6 +226,7 @@ function handleSubmitAttendance(userId, tipe, selfieData, coords) {
       return { success: false, message: "Gagal: Anda wajib mengambil foto selfie sebelum absen!" };
     }
 
+    var globalConfig = getConfig();
     var todayStatus = getTodayUserAttendance(userId);
     if (tipe === "Check-In" && todayStatus.hasCheckedIn) {
       return { success: false, message: "Gagal: Anda sudah melakukan Check-In untuk hari ini!" };
@@ -211,10 +256,11 @@ function handleSubmitAttendance(userId, tipe, selfieData, coords) {
     }
 
     var now = new Date();
-    var timeFormatted = Utilities.formatDate(now, CONFIG.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
-    var dateFileFormatted = Utilities.formatDate(now, CONFIG.TIMEZONE, "yyyyMMdd_HHmmss");
+    var timeFormatted = Utilities.formatDate(now, globalConfig.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
+    var dateFileFormatted = Utilities.formatDate(now, globalConfig.TIMEZONE, "yyyyMMdd_HHmmss");
 
-    var folder = DriveApp.getFolderById(CONFIG.FOLDER_ID);
+    var folderId = globalConfig.FOLDER_ID || CONFIG.FOLDER_ID;
+    var folder = DriveApp.getFolderById(folderId);
     var cleanBase64 = selfieData.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
     var imageBytes = Utilities.base64Decode(cleanBase64);
     
@@ -251,10 +297,157 @@ function handleSubmitAttendance(userId, tipe, selfieData, coords) {
     };
 
   } catch (err) {
+    return { success: false, message: "Gagal menyimpan absensi: " + err.message };
+  }
+}
+
+/**
+ * Pengajuan Ijin Guru (Ijin Sakit, Ijin Dinas, Ijin Lainnya)
+ */
+function handleSubmitIjin(userId, tipeIjin, keterangan, fotoData, tanggalIjin) {
+  try {
+    if (!tipeIjin || !fotoData) {
+      return { success: false, message: "Gagal: Tipe ijin dan foto bukti wajib melampirkan foto!" };
+    }
+
+    var validTypes = ["Ijin Sakit", "Ijin Dinas", "Ijin Lainnya"];
+    if (validTypes.indexOf(tipeIjin) === -1) {
+      return { success: false, message: "Gagal: Pilih tipe ijin yang valid (Ijin Sakit, Ijin Dinas, Ijin Lainnya)." };
+    }
+
+    var globalConfig = getConfig();
+    var now = new Date();
+    var timeFormatted = Utilities.formatDate(now, globalConfig.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
+    var dateFileFormatted = Utilities.formatDate(now, globalConfig.TIMEZONE, "yyyyMMdd_HHmmss");
+
+    var folderId = globalConfig.FOLDER_ID || CONFIG.FOLDER_ID;
+    var folder = DriveApp.getFolderById(folderId);
+    var cleanBase64 = fotoData.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
+    var imageBytes = Utilities.base64Decode(cleanBase64);
+    
+    var cleanTipe = tipeIjin.replace(/\s+/g, "_");
+    var fileName = "IJIN_" + cleanTipe + "_" + userId + "_" + dateFileFormatted + ".jpg";
+    var blob = Utilities.newBlob(imageBytes, "image/jpeg", fileName);
+    
+    var driveFile = folder.createFile(blob);
+    driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    var photoUrl = driveFile.getUrl();
+
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("Ijin");
+    if (!sheet) {
+      initialSetup();
+      sheet = ss.getSheetByName("Ijin");
+    }
+
+    var tglIjinStr = tanggalIjin || Utilities.formatDate(now, globalConfig.TIMEZONE, "yyyy-MM-dd");
+
+    sheet.appendRow([
+      timeFormatted,
+      userId,
+      tipeIjin,
+      keterangan || "-",
+      photoUrl,
+      "Menunggu Approval",
+      tglIjinStr
+    ]);
+
     return {
-      success: false,
-      message: "Gagal menyimpan absensi: " + err.message
+      success: true,
+      message: "Permohonan " + tipeIjin + " berhasil diajukan! Menunggu persetujuan Admin."
     };
+
+  } catch (err) {
+    return { success: false, message: "Gagal mengajukan ijin: " + err.message };
+  }
+}
+
+/**
+ * Mengambil Rekap Data Ijin (User / All)
+ */
+function handleGetIjinData(filterUserId) {
+  try {
+    var globalConfig = getConfig();
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("Ijin");
+
+    if (!sheet) return { success: true, data: [] };
+
+    var data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return { success: true, data: [] };
+
+    var list = [];
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      var rawTime = row[0];
+      var formattedTime = rawTime;
+      if (rawTime instanceof Date) {
+        formattedTime = Utilities.formatDate(rawTime, globalConfig.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
+      } else {
+        formattedTime = String(rawTime);
+      }
+
+      var rowNama = String(row[1]);
+
+      if (!filterUserId || filterUserId === "ALL" || rowNama.toLowerCase() === String(filterUserId).toLowerCase()) {
+        list.push({
+          waktu: formattedTime,
+          nama: rowNama,
+          tipeIjin: String(row[2]),
+          keterangan: String(row[3]),
+          fotoUrl: String(row[4]),
+          status: String(row[5] || "Menunggu Approval"),
+          tanggalIjin: String(row[6] || formattedTime.split(" ")[0])
+        });
+      }
+    }
+
+    list.reverse(); // Urutan terbaru di atas
+    return { success: true, data: list };
+
+  } catch (err) {
+    return { success: false, message: "Gagal mengambil data ijin: " + err.message };
+  }
+}
+
+/**
+ * Modul Approval Admin (Setujui / Tolak Ijin Guru)
+ */
+function handleUpdateIjinStatus(waktu, nama, newStatus) {
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("Ijin");
+    if (!sheet) return { success: false, message: "Sheet 'Ijin' tidak ditemukan!" };
+
+    var data = sheet.getDataRange().getValues();
+    var targetNama = String(nama).trim().toLowerCase();
+    var targetWaktu = String(waktu).trim();
+
+    for (var i = 1; i < data.length; i++) {
+      var rowWaktu = data[i][0];
+      var rowNama = String(data[i][1]).trim().toLowerCase();
+
+      var formattedRowWaktu = rowWaktu;
+      if (rowWaktu instanceof Date) {
+        var globalConfig = getConfig();
+        formattedRowWaktu = Utilities.formatDate(rowWaktu, globalConfig.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
+      } else {
+        formattedRowWaktu = String(rowWaktu).trim();
+      }
+
+      if (rowNama === targetNama && formattedRowWaktu === targetWaktu) {
+        sheet.getRange(i + 1, 6).setValue(newStatus); // Update Kolom F (Status Approval)
+        return {
+          success: true,
+          message: "Permohonan ijin " + nama + " berhasil diperbarui menjadi '" + newStatus + "'."
+        };
+      }
+    }
+
+    return { success: false, message: "Data permohonan ijin tidak ditemukan!" };
+
+  } catch (err) {
+    return { success: false, message: "Gagal memperbarui status ijin: " + err.message };
   }
 }
 
@@ -271,6 +464,7 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
 
 function handleGetAttendanceData() {
   try {
+    var globalConfig = getConfig();
     var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
     var sheet = ss.getSheetByName("Absensi");
 
@@ -290,7 +484,7 @@ function handleGetAttendanceData() {
       var formattedTime = rawTime;
       
       if (rawTime instanceof Date) {
-        formattedTime = Utilities.formatDate(rawTime, CONFIG.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
+        formattedTime = Utilities.formatDate(rawTime, globalConfig.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
       } else {
         formattedTime = String(rawTime);
       }
