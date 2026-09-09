@@ -62,19 +62,25 @@ function initialSetup() {
       sheetConfig.appendRow(["FOLDER_ID", CONFIG.FOLDER_ID, "ID Folder Google Drive Tempat Foto Selfie"]);
     }
     
-    // 2. Setup Sheet Absensi
+    // 2. Setup Sheet Absensi (Ditambahkan kolom Durasi Kerja)
     var sheetAbsensi = ss.getSheetByName("Absensi");
     if (!sheetAbsensi) {
       sheetAbsensi = ss.insertSheet("Absensi");
     }
 
     if (sheetAbsensi.getLastRow() === 0) {
-      sheetAbsensi.appendRow(["Tanggal & Waktu", "ID / Nama User", "Tipe Absen", "Koordinat GPS", "Link Foto Drive"]);
-      var headerAbsensi = sheetAbsensi.getRange(1, 1, 1, 5);
+      sheetAbsensi.appendRow(["Tanggal & Waktu", "ID / Nama User", "Tipe Absen", "Koordinat GPS", "Link Foto Drive", "Durasi Kerja"]);
+      var headerAbsensi = sheetAbsensi.getRange(1, 1, 1, 6);
       headerAbsensi.setFontWeight("bold")
                    .setBackground("#6366f1")
                    .setFontColor("#ffffff");
       sheetAbsensi.setFrozenRows(1);
+    } else {
+      // Pastikan header kolom ke-6 bernama Durasi Kerja jika belum ada
+      var currentHeader = sheetAbsensi.getRange(1, 1, 1, 6).getValues()[0];
+      if (!currentHeader[5] || currentHeader[5] === "") {
+        sheetAbsensi.getRange(1, 6).setValue("Durasi Kerja").setFontWeight("bold").setBackground("#6366f1").setFontColor("#ffffff");
+      }
     }
 
     // 3. Setup Sheet User
@@ -97,7 +103,7 @@ function initialSetup() {
       sheetUser.appendRow(["Admin", "admin123", "Kepala Sekolah", "", "", ""]);
     }
 
-    // 4. Setup Sheet Ijin (Fitur Baru Permohonan Ijin Guru)
+    // 4. Setup Sheet Ijin
     var sheetIjin = ss.getSheetByName("Ijin");
     if (!sheetIjin) {
       sheetIjin = ss.insertSheet("Ijin");
