@@ -6,11 +6,12 @@
 
 const CONFIG = {
   APP_TITLE: "Aplikasi Absensi Rajawali",
-  // Tempel ID Spreadsheet Anda di bawah ini
-  SPREADSHEET_ID: "1WwwA3gDGnEFRVLhoq5_-y3AyIN1joJEtdh57vRHxR8U",
-  // Tempel ID Folder Google Drive Anda di bawah ini
+ SPREADSHEET_ID: "1WwwA3gDGnEFRVLhoq5_-y3AyIN1joJEtdh57vRHxR8U",
   FOLDER_ID: "1W8kCjJdXSWvAGLoe5jZvvop3extOuX_P",
-  TIMEZONE: "GMT+9" // WIT (Waktu Indonesia Timur)
+  TIMEZONE: "GMT+9", // WIT (Waktu Indonesia Timur)
+  SCHOOL_LAT: 1.692656,
+  SCHOOL_LNG: 128.009276,
+  MAX_RADIUS_METERS: 20
 };
 
 /**
@@ -34,14 +35,10 @@ function tesOtorisasiDrive() {
   }
 }
 
-/**
- * Jalankan fungsi ini sekali untuk memastikan Sheet memiliki header kolom yang benar
- */
 function initialSetup() {
   try {
     var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
     
-    // 1. Setup Sheet Absensi
     var sheet = ss.getSheetByName("Absensi");
     if (!sheet) {
       sheet = ss.insertSheet("Absensi");
@@ -56,7 +53,6 @@ function initialSetup() {
       sheet.setFrozenRows(1);
     }
 
-    // 2. Setup Sheet User (Database Pengguna & Role)
     var sheetUser = ss.getSheetByName("User");
     if (!sheetUser) {
       sheetUser = ss.insertSheet("User");
@@ -70,7 +66,7 @@ function initialSetup() {
                      .setFontColor("#ffffff");
       sheetUser.setFrozenRows(1);
 
-      // Tambahkan Data Pengguna Contoh
+      // Data Pengguna Contoh
       sheetUser.appendRow(["Nevi", "123456", "Guru"]);
       sheetUser.appendRow(["Ahmad", "123456", "Staf TU"]);
       sheetUser.appendRow(["Admin", "admin123", "Kepala Sekolah"]);
