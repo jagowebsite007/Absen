@@ -1,79 +1,119 @@
 /**
  * ==========================================
- * setup.gs - Konfigurasi ID & Otomatisasi Header
+ * setup.gs - Konfigurasi ID & Safe Migrate Database
+ * ZettBOT Apps Script Engine
  * ==========================================
  */
 
 const CONFIG = {
   APP_TITLE: "Aplikasi Absensi Rajawali",
- SPREADSHEET_ID: "1WwwA3gDGnEFRVLhoq5_-y3AyIN1joJEtdh57vRHxR8U",
+  SPREADSHEET_ID: "1WwwA3gDGnEFRVLhoq5_-y3AyIN1joJEtdh57vRHxR8U",
   FOLDER_ID: "1W8kCjJdXSWvAGLoe5jZvvop3extOuX_P",
   TIMEZONE: "GMT+9", // WIT (Waktu Indonesia Timur)
-  SCHOOL_LAT: 1.692649,
-  SCHOOL_LNG: 128.009278,
+  SCHOOL_LAT: 1.692656,
+  SCHOOL_LNG: 128.009276,
   MAX_RADIUS_METERS: 20
 };
 
 /**
- * JALANKAN FUNGSI INI DENGAN MENEKAN TOMBOL "RUN" / "JALANKAN" DI APPS SCRIPT
- * Fungsi ini khusus memicu Pop-Up Izin Otorisasi Google Drive & Spreadsheet.
+ * JALANKAN FUNGSI INI PERTAMA KALI DI EDITOR APPS SCRIPT
+ * Untuk memberikan otorisasi Google Drive & Spreadsheet
  */
 function tesOtorisasiDrive() {
   try {
-    // 1. Tes Akses Google Drive
     var folder = DriveApp.getFolderById(CONFIG.FOLDER_ID);
     Logger.log("✅ Izin Google Drive BERHASIL! Nama Folder: " + folder.getName());
     
-    // 2. Tes Akses Google Sheet
     var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
     Logger.log("✅ Izin Google Sheet BERHASIL! Nama Sheet: " + ss.getName());
     
-    // Jalankan setup header
     initialSetup();
   } catch (err) {
     Logger.log("❌ Masalah Otorisasi: " + err.message);
   }
 }
 
+/**
+ * Inisialisasi Database Non-Destruktif (Safe Migrate)
+ */
 function initialSetup() {
   try {
     var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+
+    // 1. Setup Sheet Config
+    var sheetConfig = ss.getSheetByName("Config");
+    if (!sheetConfig) {
+      sheetConfig = ss.insertSheet("Config");
+    }
+
+    if (sheetConfig.getLastRow() === 0) {
+      sheetConfig.appendRow(["Key / Parameter", "Nilai / Value", "Keterangan"]);
+      var headerConfig = sheetConfig.getRange(1, 1, 1, 3);
+      headerConfig.setFontWeight("bold")
+                  .setBackground("#3b82f6")
+                  .setFontColor("#ffffff");
+      sheetConfig.setFrozenRows(1);
+
+      sheetConfig.appendRow(["APP_TITLE", CONFIG.APP_TITLE, "Judul Nama Aplikasi Absensi"]);
+      sheetConfig.appendRow(["TIMEZONE", CONFIG.TIMEZONE, "Zona Waktu (GMT+7 = WIB, GMT+8 = WITA, GMT+9 = WIT)"]);
+      sheetConfig.appendRow(["SCHOOL_LAT", CONFIG.SCHOOL_LAT, "Latitude Koordinat Utama Sekolah"]);
+      sheetConfig.appendRow(["SCHOOL_LNG", CONFIG.SCHOOL_LNG, "Longitude Koordinat Utama Sekolah"]);
+      sheetConfig.appendRow(["MAX_RADIUS_METERS", CONFIG.MAX_RADIUS_METERS, "Radius Maksimal Jarak Absensi (Meter)"]);
+      sheetConfig.appendRow(["FOLDER_ID", CONFIG.FOLDER_ID, "ID Folder Google Drive Tempat Foto Selfie"]);
+    }
     
-    var sheet = ss.getSheetByName("Absensi");
-    if (!sheet) {
-      sheet = ss.insertSheet("Absensi");
+    // 2. Setup Sheet Absensi
+    var sheetAbsensi = ss.getSheetByName("Absensi");
+    if (!sheetAbsensi) {
+      sheetAbsensi = ss.insertSheet("Absensi");
     }
 
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow(["Tanggal & Waktu (WIT)", "ID / Nama User", "Tipe Absen", "Koordinat GPS", "Link Foto Drive"]);
-      var headerRange = sheet.getRange(1, 1, 1, 5);
-      headerRange.setFontWeight("bold")
-                 .setBackground("#6366f1")
-                 .setFontColor("#ffffff");
-      sheet.setFrozenRows(1);
+    if (sheetAbsensi.getLastRow() === 0) {
+      sheetAbsensi.appendRow(["Tanggal & Waktu", "ID / Nama User", "Tipe Absen", "Koordinat GPS", "Link Foto Drive"]);
+      var headerAbsensi = sheetAbsensi.getRange(1, 1, 1, 5);
+      headerAbsensi.setFontWeight("bold")
+                   .setBackground("#6366f1")
+                   .setFontColor("#ffffff");
+      sheetAbsensi.setFrozenRows(1);
     }
 
+    // 3. Setup Sheet User
     var sheetUser = ss.getSheetByName("User");
     if (!sheetUser) {
       sheetUser = ss.insertSheet("User");
     }
 
     if (sheetUser.getLastRow() === 0) {
-      sheetUser.appendRow(["Nama", "Password", "Role"]);
-      var userHeaderRange = sheetUser.getRange(1, 1, 1, 3);
-      userHeaderRange.setFontWeight("bold")
-                     .setBackground("#10b981")
-                     .setFontColor("#ffffff");
+      sheetUser.appendRow(["Nama", "Password", "Role", "Lat Custom", "Lng Custom", "Radius Custom"]);
+      var headerUser = sheetUser.getRange(1, 1, 1, 6);
+      headerUser.setFontWeight("bold")
+                    .setBackground("#10b981")
+                    .setFontColor("#ffffff");
       sheetUser.setFrozenRows(1);
 
-      // Data Pengguna Contoh
-      sheetUser.appendRow(["Nevi", "123456", "Guru"]);
-      sheetUser.appendRow(["Ahmad", "123456", "Staf TU"]);
-      sheetUser.appendRow(["Admin", "admin123", "Kepala Sekolah"]);
+      // Data Akun Default
+      sheetUser.appendRow(["Nevi", "123456", "Guru", "", "", ""]);
+      sheetUser.appendRow(["Ahmad", "123456", "Staf TU", "", "", ""]);
+      sheetUser.appendRow(["Admin", "admin123", "Kepala Sekolah", "", "", ""]);
+    }
+
+    // 4. Setup Sheet Ijin (Fitur Baru Permohonan Ijin Guru)
+    var sheetIjin = ss.getSheetByName("Ijin");
+    if (!sheetIjin) {
+      sheetIjin = ss.insertSheet("Ijin");
+    }
+
+    if (sheetIjin.getLastRow() === 0) {
+      sheetIjin.appendRow(["Tanggal & Waktu Pengajuan", "ID / Nama User", "Tipe Ijin", "Keterangan", "Link Foto Drive", "Status Approval", "Tanggal Ijin"]);
+      var headerIjin = sheetIjin.getRange(1, 1, 1, 7);
+      headerIjin.setFontWeight("bold")
+                .setBackground("#f59e0b")
+                .setFontColor("#ffffff");
+      sheetIjin.setFrozenRows(1);
     }
     
-    Logger.log("Inisialisasi Sheet Absensi & User berhasil!");
+    Logger.log("✅ Inisialisasi & Safe Migrate Sheet Config, Absensi, User, & Ijin BERHASIL!");
   } catch (err) {
-    Logger.log("Gagal melakukan setup: " + err.message);
+    Logger.log("❌ Gagal melakukan setup: " + err.message);
   }
 }
