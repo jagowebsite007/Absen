@@ -308,6 +308,28 @@
       border-color: rgba(52, 211, 153, 0.4);
     }
 
+    /* KOTAK STATUS KETERLAMBATAN GURU */
+    .late-status-card {
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .late-card-green {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      color: #34d399;
+    }
+    .late-card-red {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+
     .sub-nav {
       display: flex;
       gap: 6px;
@@ -476,6 +498,12 @@
         </div>
       </div>
 
+      <!-- KOTAK NOTIFIKASI KETERLAMBATAN (LANGSUNG MUNCUL SAAT GURU LOGIN) -->
+      <div id="teacherLateNotice" class="late-status-card late-card-green hidden">
+        <span>📌 Status Hari Ini:</span>
+        <span id="teacherLateText">Tepat Waktu</span>
+      </div>
+
       <!-- NAVIGASI TAB UNTUK GURU -->
       <div id="guruNavTab" class="sub-nav">
         <button id="btnTabAbsen" onclick="switchGuruTab('absen')" class="btn-tab active">📷 Absen Selfie</button>
@@ -494,6 +522,7 @@
         <div class="clock-widget">
           <div class="clock-title">Waktu Real-Time (WIT)</div>
           <div id="liveClockDisplay" class="clock-time">--:--:-- WIT</div>
+          <div style="font-size: 9px; color: #fbbf24; margin-top: 4px; font-weight: 600;">⏰ Batas Check-In Tepat Waktu: Max 07:01 WIT</div>
         </div>
 
         <div class="camera-box">
@@ -585,7 +614,7 @@
       <!-- SECTION 4: REKAP DURASI KERJA (ADMIN) -->
       <div id="secAdminRecap" class="bento-card hidden">
         <h3 style="font-size: 13px; font-weight: 800; margin-bottom: 2px; color: #c084fc;">⏱️ Monitoring Kehadiran & Durasi</h3>
-        <p style="font-size: 10px; color: #9ca3af; margin-bottom: 12px;">Merekap jam Check-In, Check-Out, dan selisih jam kerja.</p>
+        <p style="font-size: 10px; color: #9ca3af; margin-bottom: 12px;">Merekap jam Check-In, Check-Out, Keterlambatan (>07:01), dan selisih jam kerja.</p>
         
         <div class="filter-grid">
           <div>
@@ -606,11 +635,11 @@
             </select>
           </div>
           <div>
-            <label style="font-size: 9px; color: #9ca3af; display: block; margin-bottom: 3px;">Status</label>
+            <label style="font-size: 9px; color: #9ca3af; display: block; margin-bottom: 3px;">Ket. Masuk</label>
             <select id="filterStatus" class="form-control" style="padding: 6px;" onchange="applyAdminFilter()">
               <option value="ALL">Semua Status</option>
-              <option value="Lengkap">Hadir Lengkap</option>
-              <option value="Belum Check-Out">Belum Check-Out</option>
+              <option value="Tepat Waktu">Tepat Waktu (<=07:01)</option>
+              <option value="Terlambat">Terlambat (>07:01)</option>
             </select>
           </div>
         </div>
@@ -618,15 +647,15 @@
         <div class="stat-card-grid">
           <div class="stat-card">
             <div id="statTotalGuru" class="stat-value">0</div>
-            <div class="stat-label">Total Guru</div>
+            <div class="stat-label">Total Record</div>
           </div>
           <div class="stat-card">
             <div id="statLengkap" class="stat-value" style="color: #34d399;">0</div>
-            <div class="stat-label">Hadir Lengkap</div>
+            <div class="stat-label">Tepat Waktu</div>
           </div>
           <div class="stat-card">
-            <div id="statBelumOut" class="stat-value" style="color: #fbbf24;">0</div>
-            <div class="stat-label">Belum Out</div>
+            <div id="statBelumOut" class="stat-value" style="color: #f87171;">0</div>
+            <div class="stat-label">Terlambat</div>
           </div>
         </div>
 
@@ -635,10 +664,10 @@
             <thead>
               <tr>
                 <th>Nama & Tgl</th>
-                <th>In</th>
-                <th>Out</th>
+                <th>Check-In</th>
+                <th>Check-Out</th>
                 <th>Durasi</th>
-                <th>Status</th>
+                <th>Ket. Masuk</th>
                 <th>Bukti</th>
               </tr>
             </thead>
@@ -682,7 +711,6 @@
 <div id="toast" class="toast">Notifikasi...</div>
 
 <script>
-  // URL WebApp Google Apps Script default (silakan ganti dengan URL WebApp /exec milik Anda jika dipublikasikan)
   var DEFAULT_GAS_API_URL = "https://script.google.com/macros/s/AKfycbx.../exec";
 
   var currentUser = null;
@@ -696,9 +724,9 @@
   var rawIjinData = [];
   var isDemoMode = false;
   
-  var schoolConfig = { lat: 1.692656, lng: 128.009276, maxRadius: 20 };
+  var schoolConfig = { lat: 1.692656, lng: 128.009276, maxRadius: 20, jamMasukMax: "07:01" };
   var currentDistanceMeters = null;
-  var todayStatus = { hasCheckedIn: false, hasCheckedOut: false };
+  var todayStatus = { hasCheckedIn: false, hasCheckedOut: false, isLate: false, statusText: "Belum Absen Hari Ini" };
 
   window.onload = function() {
     document.getElementById('ijinTanggal').value = new Date().toISOString().slice(0, 10);
@@ -777,6 +805,7 @@
           document.getElementById('userRoleBadge').className = "badge-status badge-purple";
           document.getElementById('guruNavTab').classList.add('hidden');
           document.getElementById('adminNavTab').classList.remove('hidden');
+          document.getElementById('teacherLateNotice').classList.add('hidden');
           switchAdminTab('recap');
         } else {
           banner.className = "portal-banner banner-guru";
@@ -785,6 +814,8 @@
           document.getElementById('userRoleBadge').className = "badge-status badge-green";
           document.getElementById('adminNavTab').classList.add('hidden');
           document.getElementById('guruNavTab').classList.remove('hidden');
+          
+          updateTeacherLateNotice();
           switchGuruTab('absen');
         }
 
@@ -796,10 +827,31 @@
     });
   }
 
+  function updateTeacherLateNotice() {
+    var lateCard = document.getElementById('teacherLateNotice');
+    var lateText = document.getElementById('teacherLateText');
+
+    if (!todayStatus.hasCheckedIn) {
+      lateCard.classList.remove('hidden');
+      lateCard.className = "late-status-card late-card-green";
+      lateText.innerText = "Belum Check-In Hari Ini (Batas: 07:01 WIT)";
+      return;
+    }
+
+    lateCard.classList.remove('hidden');
+    if (todayStatus.isLate) {
+      lateCard.className = "late-status-card late-card-red";
+      lateText.innerText = "🚨 " + todayStatus.statusText;
+    } else {
+      lateCard.className = "late-status-card late-card-green";
+      lateText.innerText = "✅ " + todayStatus.statusText;
+    }
+  }
+
   function useDemoLogin() {
     isDemoMode = true;
     currentUser = { id: "DemoGuru", nama: "Guru Demo", role: "Guru" };
-    todayStatus = { hasCheckedIn: false, hasCheckedOut: false };
+    todayStatus = { hasCheckedIn: false, hasCheckedOut: false, isLate: false, statusText: "Belum Absen Hari Ini" };
 
     document.getElementById('viewLogin').classList.add('hidden');
     document.getElementById('viewUserDashboard').classList.remove('hidden');
@@ -808,6 +860,7 @@
     document.getElementById('adminNavTab').classList.add('hidden');
     document.getElementById('guruNavTab').classList.remove('hidden');
 
+    updateTeacherLateNotice();
     switchGuruTab('absen');
     updateAttendanceButtons();
     showToast("💡 Masuk Mode Demo Uji Coba Lintas Browser");
@@ -822,7 +875,18 @@
         schoolConfig: schoolConfig
       });
     } else if (action === "submitAttendance") {
-      if (payload.tipe === "Check-In") todayStatus.hasCheckedIn = true;
+      var timeNowStr = new Date().toLocaleTimeString('id-ID');
+      if (payload.tipe === "Check-In") {
+        todayStatus.hasCheckedIn = true;
+        var nowHHmm = new Date().toISOString().slice(11,16);
+        if (nowHHmm > "07:01") {
+          todayStatus.isLate = true;
+          todayStatus.statusText = "Terlambat (Check-In: " + timeNowStr + ")";
+        } else {
+          todayStatus.isLate = false;
+          todayStatus.statusText = "Tepat Waktu (Check-In: " + timeNowStr + ")";
+        }
+      }
       if (payload.tipe === "Check-Out") todayStatus.hasCheckedOut = true;
       callback({ success: true, message: "✅ Absensi " + payload.tipe + " (Demo) Berhasil!", todayStatus: todayStatus });
     } else if (action === "submitIjin") {
@@ -831,16 +895,16 @@
       callback({
         success: true,
         data: [
-          { waktu: new Date().toISOString().slice(0, 10) + " 07:15:00", nama: "Nevi", tipe: "Check-In", gps: "1.692656,128.009276 (5m)", fotoUrl: "#" },
-          { waktu: new Date().toISOString().slice(0, 10) + " 14:30:00", nama: "Nevi", tipe: "Check-Out", gps: "1.692656,128.009276 (5m)", fotoUrl: "#" }
+          { waktu: new Date().toISOString().slice(0, 10) + " 07:15:00", nama: "Nevi", tipe: "Check-In", gps: "1.692656,128.009276 (5m)", fotoUrl: "#", statusKehadiran: "Terlambat" },
+          { waktu: new Date().toISOString().slice(0, 10) + " 14:30:00", nama: "Nevi", tipe: "Check-Out", gps: "1.692656,128.009276 (5m)", fotoUrl: "#", statusKehadiran: "-" },
+          { waktu: new Date().toISOString().slice(0, 10) + " 06:55:00", nama: "Ahmad", tipe: "Check-In", gps: "1.692656,128.009276 (2m)", fotoUrl: "#", statusKehadiran: "Tepat Waktu" }
         ]
       });
     } else if (action === "getIjinData") {
       callback({
         success: true,
         data: [
-          { waktu: "2026-09-09 08:00:00", nama: "Nevi", tipeIjin: "Ijin Sakit", keterangan: "Demam & Flu", fotoUrl: "#", status: "Menunggu Approval", tanggalIjin: "2026-09-09" },
-          { waktu: "2026-09-08 07:30:00", nama: "Ahmad", tipeIjin: "Ijin Dinas", keterangan: "Bimtek Kurikulum", fotoUrl: "#", status: "Disetujui", tanggalIjin: "2026-09-08" }
+          { waktu: "2026-09-09 08:00:00", nama: "Nevi", tipeIjin: "Ijin Sakit", keterangan: "Demam & Flu", fotoUrl: "#", status: "Menunggu Approval", tanggalIjin: "2026-09-09" }
         ]
       });
     } else if (action === "updateIjinStatus") {
@@ -1125,6 +1189,7 @@
         if (res.todayStatus) {
           todayStatus = res.todayStatus;
           updateAttendanceButtons();
+          updateTeacherLateNotice();
         }
         selfieData = "";
         document.getElementById('selfiePreview').classList.add('hidden');
@@ -1195,7 +1260,7 @@
       var key = dateStr + "___" + r.nama;
 
       if (!groups[key]) {
-        groups[key] = { tanggal: dateStr, nama: r.nama, checkInStr: null, checkInTime: null, checkInFoto: null, checkOutStr: null, checkOutTime: null, checkOutFoto: null };
+        groups[key] = { tanggal: dateStr, nama: r.nama, checkInStr: null, checkInTime: null, checkInFoto: null, checkOutStr: null, checkOutTime: null, checkOutFoto: null, statusKehadiran: "-" };
       }
 
       var timeDate = new Date(r.waktu.replace(/-/g, "/"));
@@ -1204,6 +1269,7 @@
           groups[key].checkInTime = timeDate;
           groups[key].checkInStr = timeParts[1] || r.waktu;
           groups[key].checkInFoto = r.fotoUrl;
+          groups[key].statusKehadiran = r.statusKehadiran || (timeParts[1] > "07:01" ? "Terlambat" : "Tepat Waktu");
         }
       } else if (r.tipe === "Check-Out") {
         if (!groups[key].checkOutTime || timeDate > groups[key].checkOutTime) {
@@ -1218,21 +1284,25 @@
     Object.keys(groups).forEach(function(k) {
       var g = groups[k];
       var durasiStr = "-";
-      var status = "Belum Lengkap";
-      var badgeClass = "badge-purple";
+      var badgeClass = g.statusKehadiran === "Terlambat" ? "badge-red" : "badge-green";
 
       if (g.checkInTime && g.checkOutTime) {
         var diffMs = g.checkOutTime - g.checkInTime;
         var diffMins = Math.floor(diffMs / (1000 * 60));
         durasiStr = Math.floor(diffMins / 60) + " Jam " + (diffMins % 60) + " Min";
-        status = "Hadir Lengkap";
-        badgeClass = "badge-green";
-      } else if (g.checkInTime && !g.checkOutTime) {
-        status = "Belum Check-Out";
-        badgeClass = "badge-amber";
       }
 
-      summaryList.push({ tanggal: g.tanggal, nama: g.nama, checkIn: g.checkInStr || "-", checkOut: g.checkOutStr || "-", durasi: durasiStr, status: status, badgeClass: badgeClass, fotoCheckIn: g.checkInFoto, fotoCheckOut: g.checkOutFoto });
+      summaryList.push({ 
+        tanggal: g.tanggal, 
+        nama: g.nama, 
+        checkIn: g.checkInStr || "-", 
+        checkOut: g.checkOutStr || "-", 
+        durasi: durasiStr, 
+        statusKehadiran: g.statusKehadiran || "-", 
+        badgeClass: badgeClass, 
+        fotoCheckIn: g.checkInFoto, 
+        fotoCheckOut: g.checkOutFoto 
+      });
     });
 
     summaryList.sort(function(a, b) { return b.tanggal.localeCompare(a.tanggal); });
@@ -1269,8 +1339,8 @@
       if (endDate && row.tanggal > endDate) matchDate = false;
       if (selectedNama !== "ALL" && row.nama !== selectedNama) matchNama = false;
       if (selectedStatus !== "ALL") {
-        if (selectedStatus === "Lengkap" && row.status !== "Hadir Lengkap") matchStatus = false;
-        if (selectedStatus === "Belum Check-Out" && row.status !== "Belum Check-Out") matchStatus = false;
+        if (selectedStatus === "Tepat Waktu" && row.statusKehadiran !== "Tepat Waktu") matchStatus = false;
+        if (selectedStatus === "Terlambat" && row.statusKehadiran !== "Terlambat") matchStatus = false;
       }
       return matchDate && matchNama && matchStatus;
     });
@@ -1281,14 +1351,14 @@
   function renderAdminTable(data) {
     var tbody = document.getElementById('adminTableBody');
     tbody.innerHTML = "";
-    var countLengkap = 0, countBelumOut = 0;
+    var countTepat = 0, countTerlambat = 0;
 
     if (data.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #9ca3af;">Tidak ada data.</td></tr>';
     } else {
       data.forEach(function(row) {
-        if (row.status === "Hadir Lengkap") countLengkap++;
-        if (row.status === "Belum Check-Out") countBelumOut++;
+        if (row.statusKehadiran === "Tepat Waktu") countTepat++;
+        if (row.statusKehadiran === "Terlambat") countTerlambat++;
 
         var tr = document.createElement('tr');
         var fotoInCell = row.fotoCheckIn ? `<a href="${row.fotoCheckIn}" target="_blank" style="color: #34d399; text-decoration: underline;">In</a>` : `-`;
@@ -1299,7 +1369,7 @@
           <td style="color:#34d399; font-weight:700;">${row.checkIn}</td>
           <td style="color:#f87171; font-weight:700;">${row.checkOut}</td>
           <td style="font-weight:800; color:#818cf8;">${row.durasi}</td>
-          <td><span class="badge-status ${row.badgeClass}">${row.status}</span></td>
+          <td><span class="badge-status ${row.badgeClass}">${row.statusKehadiran}</span></td>
           <td>${fotoInCell} | ${fotoOutCell}</td>
         `;
         tbody.appendChild(tr);
@@ -1307,8 +1377,8 @@
     }
 
     document.getElementById('statTotalGuru').innerText = data.length;
-    document.getElementById('statLengkap').innerText = countLengkap;
-    document.getElementById('statBelumOut').innerText = countBelumOut;
+    document.getElementById('statLengkap').innerText = countTepat;
+    document.getElementById('statBelumOut').innerText = countTerlambat;
   }
 
   function downloadPdfReport() {
@@ -1328,7 +1398,7 @@
           <td style="border:1px solid #cbd5e1; padding:8px; text-align:center;">${row.checkIn}</td>
           <td style="border:1px solid #cbd5e1; padding:8px; text-align:center;">${row.checkOut}</td>
           <td style="border:1px solid #cbd5e1; padding:8px; text-align:center;">${row.durasi}</td>
-          <td style="border:1px solid #cbd5e1; padding:8px; text-align:center;">${row.status}</td>
+          <td style="border:1px solid #cbd5e1; padding:8px; text-align:center;">${row.statusKehadiran}</td>
         </tr>
       `;
     });
@@ -1336,8 +1406,8 @@
     var htmlContent = `
       <!DOCTYPE html><html><head><title>Laporan Kehadiran Rajawali</title>
       <style>body{font-family:sans-serif;margin:20px;}.header{text-align:center;border-bottom:2px solid #4f46e5;padding-bottom:10px;}table{width:100%;border-collapse:collapse;margin-top:15px;font-size:11px;}th{background:#4f46e5;color:white;padding:8px;}</style></head>
-      <body><div class="header"><h1>SEKOLAH RAJAWALI</h1><p>LAPORAN KEHADIRAN & DURASI KERJA GURU</p></div>
-      <table><thead><tr><th>No</th><th>Tanggal</th><th>Nama Guru</th><th>Check-In</th><th>Check-Out</th><th>Durasi</th><th>Status</th></tr></thead>
+      <body><div class="header"><h1>SEKOLAH RAJAWALI</h1><p>LAPORAN KEHADIRAN & STATUS KETERLAMBATAN GURU</p></div>
+      <table><thead><tr><th>No</th><th>Tanggal</th><th>Nama Guru</th><th>Check-In</th><th>Check-Out</th><th>Durasi</th><th>Ket. Masuk</th></tr></thead>
       <tbody>${rowsHtml}</tbody></table>
       <script>window.onload=function(){window.print();};<\/script></body></html>
     `;
