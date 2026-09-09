@@ -6,10 +6,17 @@
 
 function doPost(e) {
   try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return ContentService.createTextOutput(JSON.stringify({ 
+        success: false, 
+        message: "Payload POST kosong atau tidak valid." 
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     var request = JSON.parse(e.postData.contents);
     var action = request.action;
-    var payload = request.payload;
-    var result = { success: false, message: "Aksi tidak dikenal" };
+    var payload = request.payload || {};
+    var result = { success: false, message: "Aksi tidak dikenal (" + action + ")" };
 
     if (action === "login") {
       result = handleLogin(payload.nama, payload.pass);
@@ -31,7 +38,22 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  return ContentService.createTextOutput("REST API Absensi Rajawali Aktif!");
+  try {
+    var params = e ? e.parameter : {};
+    var action = params.action;
+
+    if (action === "login") {
+      var res = handleLogin(params.nama, params.pass);
+      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+    } else if (action === "getAttendanceData") {
+      var res = handleGetAttendanceData();
+      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    return ContentService.createTextOutput("REST API Absensi Rajawali Aktif!");
+  } catch (err) {
+    return ContentService.createTextOutput("Error: " + err.message);
+  }
 }
 
 function handleLogin(nama, pass) {
@@ -44,7 +66,7 @@ function handleLogin(nama, pass) {
     var sheet = ss.getSheetByName("User");
 
     if (!sheet) {
-      return { success: false, message: "Sheet 'User' belum ditemukan! Jalankan tesOtorisasiDrive() / initialSetup() di setup.gs." };
+      return { success: false, message: "Sheet 'User' belum ditemukan! Silakan jalankan tesOtorisasiDrive() / initialSetup() pada setup.gs." };
     }
 
     var data = sheet.getDataRange().getValues();
@@ -52,15 +74,19 @@ function handleLogin(nama, pass) {
       return { success: false, message: "Database pengguna kosong! Harap tambahkan baris pengguna pada Sheet 'User'." };
     }
 
-    // Baris 0 adalah Header (Nama, Password, Role)
+    var inputNama = String(nama).trim().toLowerCase();
+    var inputPass = String(pass).trim();
+
     for (var i = 1; i < data.length; i++) {
       var sheetNama = String(data[i][0]).trim();
       var sheetPass = String(data[i][1]).trim();
       var sheetRole = String(data[i][2]).trim();
 
-      // Cek Nama (tidak peka huruf besar/kecil) dan Password
-      if (sheetNama.toLowerCase() === String(nama).trim().toLowerCase() && sheetPass === String(pass).trim()) {
+      if (sheetNama.toLowerCase() === inputNama && sheetPass === inputPass) {
         var todayStatus = getTodayUserAttendance(sheetNama);
+        
+        var userSchoolConfig = getUserSchoolConfig(sheetNama);
+
         return {
           success: true,
           user: { 
@@ -69,16 +95,12 @@ function handleLogin(nama, pass) {
             role: sheetRole || "Guru" 
           },
           todayStatus: todayStatus,
-          schoolConfig: {
-            lat: CONFIG.SCHOOL_LAT || -2.53871,
-            lng: CONFIG.SCHOOL_LNG || 140.70123,
-            maxRadius: CONFIG.MAX_RADIUS_METERS || 20
-          }
+          schoolConfig: userSchoolConfig
         };
       }
     }
 
-    return { success: false, message: "Nama Pengguna atau Password salah!" };
+    return { success: false, message: "Nama Pengguna atau Password salah! Periksa huruf kapital dan data di Sheet 'User'." };
 
   } catch (err) {
     return { success: false, message: "Gagal verifikasi login: " + err.message };
@@ -86,8 +108,43 @@ function handleLogin(nama, pass) {
 }
 
 /**
- * Memeriksa status absensi pengguna untuk hari ini (Check-In & Check-Out)
+ * Membaca konfigurasi GPS Sekolah langsung dari Sheet User berdasarkan Nama User
  */
+function getUserSchoolConfig(userId) {
+  var config = {
+    lat: CONFIG.SCHOOL_LAT || -2.53871,
+    lng: CONFIG.SCHOOL_LNG || 140.70123,
+    maxRadius: CONFIG.MAX_RADIUS_METERS || 20
+  };
+
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("User");
+    if (!sheet) return config;
+
+    var data = sheet.getDataRange().getValues();
+    var targetUser = String(userId).trim().toLowerCase();
+
+    for (var i = 1; i < data.length; i++) {
+      var sheetNama = String(data[i][0]).trim().toLowerCase();
+      if (sheetNama === targetUser) {
+        var latVal = parseFloat(data[i][3]);
+        var lngVal = parseFloat(data[i][4]);
+        var radVal = parseFloat(data[i][5]);
+
+        if (!isNaN(latVal) && latVal !== 0) config.lat = latVal;
+        if (!isNaN(lngVal) && lngVal !== 0) config.lng = lngVal;
+        if (!isNaN(radVal) && radVal > 0) config.maxRadius = radVal;
+        break;
+      }
+    }
+  } catch (e) {
+    Logger.log("Gagal membaca koordinat custom user: " + e.message);
+  }
+
+  return config;
+}
+
 function getTodayUserAttendance(userId) {
   var status = { hasCheckedIn: false, hasCheckedOut: false };
   try {
@@ -121,12 +178,10 @@ function getTodayUserAttendance(userId) {
 
 function handleSubmitAttendance(userId, tipe, selfieData, coords) {
   try {
-    // 1. VALIDASI WAJIB SELFIE
     if (!selfieData) {
       return { success: false, message: "Gagal: Anda wajib mengambil foto selfie sebelum absen!" };
     }
 
-    // 2. VALIDASI SIKLUS ABSENSI HARI INI (HANYA 1X CHECK-IN DAN 1X CHECK-OUT PER HARI)
     var todayStatus = getTodayUserAttendance(userId);
     if (tipe === "Check-In" && todayStatus.hasCheckedIn) {
       return { success: false, message: "Gagal: Anda sudah melakukan Check-In untuk hari ini!" };
@@ -135,16 +190,17 @@ function handleSubmitAttendance(userId, tipe, selfieData, coords) {
       return { success: false, message: "Gagal: Anda sudah melakukan Check-Out untuk hari ini!" };
     }
 
-    // 3. VALIDASI GEOLOKASI (RADIUS MAKSIMAL 20 METER)
     if (!coords || coords === "-") {
       return { success: false, message: "Gagal: Lokasi GPS tidak terdeteksi!" };
     }
     var parts = coords.split(",");
     var userLat = parseFloat(parts[0]);
     var userLng = parseFloat(parts[1]);
-    var schoolLat = CONFIG.SCHOOL_LAT || -2.53871;
-    var schoolLng = CONFIG.SCHOOL_LNG || 140.70123;
-    var maxRadius = CONFIG.MAX_RADIUS_METERS || 20;
+
+    var userSchoolConfig = getUserSchoolConfig(userId);
+    var schoolLat = userSchoolConfig.lat;
+    var schoolLng = userSchoolConfig.lng;
+    var maxRadius = userSchoolConfig.maxRadius;
 
     var distanceMeters = calculateHaversineDistance(userLat, userLng, schoolLat, schoolLng);
     if (distanceMeters > maxRadius) {
@@ -154,12 +210,10 @@ function handleSubmitAttendance(userId, tipe, selfieData, coords) {
       };
     }
 
-    // Format Tanggal WIT
     var now = new Date();
     var timeFormatted = Utilities.formatDate(now, CONFIG.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
     var dateFileFormatted = Utilities.formatDate(now, CONFIG.TIMEZONE, "yyyyMMdd_HHmmss");
 
-    // UBAH BASE64 GAMBAR & SIMPAN KE GOOGLE DRIVE
     var folder = DriveApp.getFolderById(CONFIG.FOLDER_ID);
     var cleanBase64 = selfieData.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
     var imageBytes = Utilities.base64Decode(cleanBase64);
@@ -171,7 +225,6 @@ function handleSubmitAttendance(userId, tipe, selfieData, coords) {
     driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     var photoUrl = driveFile.getUrl();
 
-    // MENCATAT DATA ABSENSI KE GOOGLE SPREADSHEET
     var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
     var sheet = ss.getSheetByName("Absensi");
     
@@ -181,11 +234,11 @@ function handleSubmitAttendance(userId, tipe, selfieData, coords) {
     }
 
     sheet.appendRow([
-      timeFormatted,  // Waktu
-      userId,         // Nama / User ID
-      tipe,           // Check-In / Check-Out
-      coords + " (" + Math.round(distanceMeters) + "m)",  // GPS Coordinates & Jarak
-      photoUrl        // Link Foto Drive
+      timeFormatted,
+      userId,
+      tipe,
+      coords + " (" + Math.round(distanceMeters) + "m)",
+      photoUrl
     ]);
 
     var updatedStatus = getTodayUserAttendance(userId);
@@ -205,11 +258,8 @@ function handleSubmitAttendance(userId, tipe, selfieData, coords) {
   }
 }
 
-/**
- * Rumus Haversine untuk Menghitung Jarak Antara Dua Koordinat GPS (dalam meter)
- */
 function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
-  var R = 6371000; // Radius bumi dalam meter
+  var R = 6371000;
   var dLat = (lat2 - lat1) * Math.PI / 180;
   var dLon = (lon2 - lon1) * Math.PI / 180;
   var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -219,9 +269,6 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-/**
- * Mengambil seluruh data absensi dari sheet "Absensi" untuk Admin
- */
 function handleGetAttendanceData() {
   try {
     var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
@@ -237,7 +284,6 @@ function handleGetAttendanceData() {
     }
 
     var list = [];
-    // Abaikan baris 0 (Header)
     for (var i = 1; i < data.length; i++) {
       var row = data[i];
       var rawTime = row[0];
