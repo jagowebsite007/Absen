@@ -1,506 +1,125 @@
 /**
  * ==========================================
- * Code.gs - REST API Backend & Google Drive Storage
- * Dynamic Config & Management Permohonan Ijin
+ * setup.gs - Konfigurasi ID & Safe Migrate Database
+ * ZettBOT Apps Script Engine
  * ==========================================
  */
 
-function doPost(e) {
+const CONFIG = {
+  APP_TITLE: "Aplikasi Absensi Rajawali",
+  SPREADSHEET_ID: "1WwwA3gDGnEFRVLhoq5_-y3AyIN1joJEtdh57vRHxR8U",
+  FOLDER_ID: "1W8kCjJdXSWvAGLoe5jZvvop3extOuX_P",
+  TIMEZONE: "GMT+9", // WIT (Waktu Indonesia Timur)
+  SCHOOL_LAT: 1.692656,
+  SCHOOL_LNG: 128.009276,
+  MAX_RADIUS_METERS: 20
+};
+
+/**
+ * JALANKAN FUNGSI INI PERTAMA KALI DI EDITOR APPS SCRIPT
+ * Untuk memberikan otorisasi Google Drive & Spreadsheet
+ */
+function tesOtorisasiDrive() {
   try {
-    if (!e || !e.postData || !e.postData.contents) {
-      return ContentService.createTextOutput(JSON.stringify({ 
-        success: false, 
-        message: "Payload POST kosong atau tidak valid." 
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    var request = JSON.parse(e.postData.contents);
-    var action = request.action;
-    var payload = request.payload || {};
-    var result = { success: false, message: "Aksi tidak dikenal (" + action + ")" };
-
-    if (action === "login") {
-      result = handleLogin(payload.nama, payload.pass);
-    } else if (action === "submitAttendance") {
-      result = handleSubmitAttendance(payload.userId, payload.tipe, payload.selfieData, payload.coords);
-    } else if (action === "getAttendanceData") {
-      result = handleGetAttendanceData();
-    } else if (action === "submitIjin") {
-      result = handleSubmitIjin(payload.userId, payload.tipeIjin, payload.keterangan, payload.fotoData, payload.tanggalIjin);
-    } else if (action === "getIjinData") {
-      result = handleGetIjinData(payload.userId);
-    } else if (action === "updateIjinStatus") {
-      result = handleUpdateIjinStatus(payload.waktu, payload.nama, payload.status);
-    }
-
-    return ContentService.createTextOutput(JSON.stringify(result))
-      .setMimeType(ContentService.MimeType.JSON);
-
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ 
-      success: false, 
-      message: "Terjadi kesalahan server: " + err.toString() 
-    })).setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-function doGet(e) {
-  try {
-    var params = e ? e.parameter : {};
-    var action = params.action;
-
-    if (action === "login") {
-      var res = handleLogin(params.nama, params.pass);
-      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
-    } else if (action === "getAttendanceData") {
-      var res = handleGetAttendanceData();
-      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
-    } else if (action === "getIjinData") {
-      var res = handleGetIjinData(params.userId);
-      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    return ContentService.createTextOutput("REST API Absensi & Ijin Rajawali Aktif!");
-  } catch (err) {
-    return ContentService.createTextOutput("Error: " + err.message);
-  }
-}
-
-function getConfig() {
-  var config = {
-    APP_TITLE: CONFIG.APP_TITLE || "Aplikasi Absensi Rajawali",
-    TIMEZONE: CONFIG.TIMEZONE || "GMT+9",
-    SCHOOL_LAT: CONFIG.SCHOOL_LAT || 1.692656,
-    SCHOOL_LNG: CONFIG.SCHOOL_LNG || 128.009276,
-    MAX_RADIUS_METERS: CONFIG.MAX_RADIUS_METERS || 20,
-    FOLDER_ID: CONFIG.FOLDER_ID || ""
-  };
-
-  try {
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-    var sheet = ss.getSheetByName("Config");
-    if (!sheet) return config;
-
-    var data = sheet.getDataRange().getValues();
-    for (var i = 1; i < data.length; i++) {
-      var key = String(data[i][0]).trim();
-      var val = data[i][1];
-
-      if (key && val !== "") {
-        if (key === "SCHOOL_LAT" || key === "SCHOOL_LNG" || key === "MAX_RADIUS_METERS") {
-          var numVal = parseFloat(val);
-          if (!isNaN(numVal)) config[key] = numVal;
-        } else {
-          config[key] = String(val).trim();
-        }
-      }
-    }
-  } catch (e) {
-    Logger.log("Gagal membaca Sheet Config: " + e.message);
-  }
-
-  return config;
-}
-
-function handleLogin(nama, pass) {
-  try {
-    if (!nama || !pass) {
-      return { success: false, message: "Nama Pengguna dan Password harus diisi!" };
-    }
-
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-    var sheet = ss.getSheetByName("User");
-
-    if (!sheet) {
-      return { success: false, message: "Sheet 'User' belum ditemukan! Silakan jalankan tesOtorisasiDrive() pada setup.gs." };
-    }
-
-    var data = sheet.getDataRange().getValues();
-    if (data.length <= 1) {
-      return { success: false, message: "Database pengguna kosong! Harap tambahkan baris pengguna pada Sheet 'User'." };
-    }
-
-    var inputNama = String(nama).trim().toLowerCase();
-    var inputPass = String(pass).trim();
-
-    for (var i = 1; i < data.length; i++) {
-      var sheetNama = String(data[i][0]).trim();
-      var sheetPass = String(data[i][1]).trim();
-      var sheetRole = String(data[i][2]).trim();
-
-      if (sheetNama.toLowerCase() === inputNama && sheetPass === inputPass) {
-        var todayStatus = getTodayUserAttendance(sheetNama);
-        var userSchoolConfig = getUserSchoolConfig(sheetNama);
-
-        return {
-          success: true,
-          user: { 
-            id: sheetNama, 
-            nama: sheetNama, 
-            role: sheetRole || "Guru" 
-          },
-          todayStatus: todayStatus,
-          schoolConfig: userSchoolConfig
-        };
-      }
-    }
-
-    return { success: false, message: "Nama Pengguna atau Password salah!" };
-
-  } catch (err) {
-    return { success: false, message: "Gagal verifikasi login: " + err.message };
-  }
-}
-
-function getUserSchoolConfig(userId) {
-  var globalConfig = getConfig();
-  var config = {
-    lat: globalConfig.SCHOOL_LAT,
-    lng: globalConfig.SCHOOL_LNG,
-    maxRadius: globalConfig.MAX_RADIUS_METERS
-  };
-
-  try {
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-    var sheet = ss.getSheetByName("User");
-    if (!sheet) return config;
-
-    var data = sheet.getDataRange().getValues();
-    var targetUser = String(userId).trim().toLowerCase();
-
-    for (var i = 1; i < data.length; i++) {
-      var sheetNama = String(data[i][0]).trim().toLowerCase();
-      if (sheetNama === targetUser) {
-        var latVal = parseFloat(data[i][3]);
-        var lngVal = parseFloat(data[i][4]);
-        var radVal = parseFloat(data[i][5]);
-
-        if (!isNaN(latVal) && latVal !== 0) config.lat = latVal;
-        if (!isNaN(lngVal) && lngVal !== 0) config.lng = lngVal;
-        if (!isNaN(radVal) && radVal > 0) config.maxRadius = radVal;
-        break;
-      }
-    }
-  } catch (e) {
-    Logger.log("Gagal membaca koordinat custom user: " + e.message);
-  }
-
-  return config;
-}
-
-function getTodayUserAttendance(userId) {
-  var status = { hasCheckedIn: false, hasCheckedOut: false };
-  try {
-    var globalConfig = getConfig();
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-    var sheet = ss.getSheetByName("Absensi");
-    if (!sheet) return status;
-
-    var data = sheet.getDataRange().getValues();
-    var todayStr = Utilities.formatDate(new Date(), globalConfig.TIMEZONE, "yyyy-MM-dd");
-
-    for (var i = 1; i < data.length; i++) {
-      var rawTime = data[i][0];
-      var rowUser = String(data[i][1]);
-      var rowTipe = String(data[i][2]);
-      var dateStr = "";
-
-      if (rawTime instanceof Date) {
-        dateStr = Utilities.formatDate(rawTime, globalConfig.TIMEZONE, "yyyy-MM-dd");
-      } else {
-        dateStr = String(rawTime).split(" ")[0];
-      }
-
-      if (rowUser.toLowerCase() === String(userId).toLowerCase() && dateStr === todayStr) {
-        if (rowTipe === "Check-In") status.hasCheckedIn = true;
-        if (rowTipe === "Check-Out") status.hasCheckedOut = true;
-      }
-    }
-  } catch(e) {}
-  return status;
-}
-
-function handleSubmitAttendance(userId, tipe, selfieData, coords) {
-  try {
-    if (!selfieData) {
-      return { success: false, message: "Gagal: Anda wajib mengambil foto selfie sebelum absen!" };
-    }
-
-    var globalConfig = getConfig();
-    var todayStatus = getTodayUserAttendance(userId);
-    if (tipe === "Check-In" && todayStatus.hasCheckedIn) {
-      return { success: false, message: "Gagal: Anda sudah melakukan Check-In untuk hari ini!" };
-    }
-    if (tipe === "Check-Out" && todayStatus.hasCheckedOut) {
-      return { success: false, message: "Gagal: Anda sudah melakukan Check-Out untuk hari ini!" };
-    }
-
-    if (!coords || coords === "-") {
-      return { success: false, message: "Gagal: Lokasi GPS tidak terdeteksi!" };
-    }
-    var parts = coords.split(",");
-    var userLat = parseFloat(parts[0]);
-    var userLng = parseFloat(parts[1]);
-
-    var userSchoolConfig = getUserSchoolConfig(userId);
-    var schoolLat = userSchoolConfig.lat;
-    var schoolLng = userSchoolConfig.lng;
-    var maxRadius = userSchoolConfig.maxRadius;
-
-    var distanceMeters = calculateHaversineDistance(userLat, userLng, schoolLat, schoolLng);
-    if (distanceMeters > maxRadius) {
-      return { 
-        success: false, 
-        message: "Gagal: Anda berada di luar area sekolah (" + Math.round(distanceMeters) + " meter). Radius maksimal " + maxRadius + " meter!" 
-      };
-    }
-
-    var now = new Date();
-    var timeFormatted = Utilities.formatDate(now, globalConfig.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
-    var dateFileFormatted = Utilities.formatDate(now, globalConfig.TIMEZONE, "yyyyMMdd_HHmmss");
-
-    var folderId = globalConfig.FOLDER_ID || CONFIG.FOLDER_ID;
-    var folder = DriveApp.getFolderById(folderId);
-    var cleanBase64 = selfieData.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-    var imageBytes = Utilities.base64Decode(cleanBase64);
+    var folder = DriveApp.getFolderById(CONFIG.FOLDER_ID);
+    Logger.log("✅ Izin Google Drive BERHASIL! Nama Folder: " + folder.getName());
     
-    var fileName = "ABSEN_" + tipe + "_" + userId + "_" + dateFileFormatted + ".jpg";
-    var blob = Utilities.newBlob(imageBytes, "image/jpeg", fileName);
-    
-    var driveFile = folder.createFile(blob);
-    driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    var photoUrl = driveFile.getUrl();
-
     var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-    var sheet = ss.getSheetByName("Absensi");
+    Logger.log("✅ Izin Google Sheet BERHASIL! Nama Sheet: " + ss.getName());
     
-    if (!sheet) {
-      initialSetup();
-      sheet = ss.getSheetByName("Absensi");
-    }
-
-    sheet.appendRow([
-      timeFormatted,
-      userId,
-      tipe,
-      coords + " (" + Math.round(distanceMeters) + "m)",
-      photoUrl
-    ]);
-
-    var updatedStatus = getTodayUserAttendance(userId);
-
-    return {
-      success: true,
-      message: "Absensi " + tipe + " Berhasil! Foto tersimpan di Google Drive.",
-      photoUrl: photoUrl,
-      todayStatus: updatedStatus
-    };
-
+    initialSetup();
   } catch (err) {
-    return { success: false, message: "Gagal menyimpan absensi: " + err.message };
+    Logger.log("❌ Masalah Otorisasi: " + err.message);
   }
 }
 
 /**
- * Pengajuan Ijin Guru (Ijin Sakit, Ijin Dinas, Ijin Lainnya)
+ * Inisialisasi Database Non-Destruktif (Safe Migrate)
  */
-function handleSubmitIjin(userId, tipeIjin, keterangan, fotoData, tanggalIjin) {
+function initialSetup() {
   try {
-    if (!tipeIjin || !fotoData) {
-      return { success: false, message: "Gagal: Tipe ijin dan foto bukti wajib melampirkan foto!" };
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+
+    // 1. Setup Sheet Config
+    var sheetConfig = ss.getSheetByName("Config");
+    if (!sheetConfig) {
+      sheetConfig = ss.insertSheet("Config");
     }
 
-    var validTypes = ["Ijin Sakit", "Ijin Dinas", "Ijin Lainnya"];
-    if (validTypes.indexOf(tipeIjin) === -1) {
-      return { success: false, message: "Gagal: Pilih tipe ijin yang valid (Ijin Sakit, Ijin Dinas, Ijin Lainnya)." };
+    if (sheetConfig.getLastRow() === 0) {
+      sheetConfig.appendRow(["Key / Parameter", "Nilai / Value", "Keterangan"]);
+      var headerConfig = sheetConfig.getRange(1, 1, 1, 3);
+      headerConfig.setFontWeight("bold")
+                  .setBackground("#3b82f6")
+                  .setFontColor("#ffffff");
+      sheetConfig.setFrozenRows(1);
+
+      sheetConfig.appendRow(["APP_TITLE", CONFIG.APP_TITLE, "Judul Nama Aplikasi Absensi"]);
+      sheetConfig.appendRow(["TIMEZONE", CONFIG.TIMEZONE, "Zona Waktu (GMT+7 = WIB, GMT+8 = WITA, GMT+9 = WIT)"]);
+      sheetConfig.appendRow(["SCHOOL_LAT", CONFIG.SCHOOL_LAT, "Latitude Koordinat Utama Sekolah"]);
+      sheetConfig.appendRow(["SCHOOL_LNG", CONFIG.SCHOOL_LNG, "Longitude Koordinat Utama Sekolah"]);
+      sheetConfig.appendRow(["MAX_RADIUS_METERS", CONFIG.MAX_RADIUS_METERS, "Radius Maksimal Jarak Absensi (Meter)"]);
+      sheetConfig.appendRow(["FOLDER_ID", CONFIG.FOLDER_ID, "ID Folder Google Drive Tempat Foto Selfie"]);
     }
-
-    var globalConfig = getConfig();
-    var now = new Date();
-    var timeFormatted = Utilities.formatDate(now, globalConfig.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
-    var dateFileFormatted = Utilities.formatDate(now, globalConfig.TIMEZONE, "yyyyMMdd_HHmmss");
-
-    var folderId = globalConfig.FOLDER_ID || CONFIG.FOLDER_ID;
-    var folder = DriveApp.getFolderById(folderId);
-    var cleanBase64 = fotoData.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-    var imageBytes = Utilities.base64Decode(cleanBase64);
     
-    var cleanTipe = tipeIjin.replace(/\s+/g, "_");
-    var fileName = "IJIN_" + cleanTipe + "_" + userId + "_" + dateFileFormatted + ".jpg";
-    var blob = Utilities.newBlob(imageBytes, "image/jpeg", fileName);
+    // 2. Setup Sheet Absensi (Ditambahkan kolom Durasi Kerja)
+    var sheetAbsensi = ss.getSheetByName("Absensi");
+    if (!sheetAbsensi) {
+      sheetAbsensi = ss.insertSheet("Absensi");
+    }
+
+    if (sheetAbsensi.getLastRow() === 0) {
+      sheetAbsensi.appendRow(["Tanggal & Waktu", "ID / Nama User", "Tipe Absen", "Koordinat GPS", "Link Foto Drive", "Durasi Kerja"]);
+      var headerAbsensi = sheetAbsensi.getRange(1, 1, 1, 6);
+      headerAbsensi.setFontWeight("bold")
+                   .setBackground("#6366f1")
+                   .setFontColor("#ffffff");
+      sheetAbsensi.setFrozenRows(1);
+    } else {
+      // Pastikan header kolom ke-6 bernama Durasi Kerja jika belum ada
+      var currentHeader = sheetAbsensi.getRange(1, 1, 1, 6).getValues()[0];
+      if (!currentHeader[5] || currentHeader[5] === "") {
+        sheetAbsensi.getRange(1, 6).setValue("Durasi Kerja").setFontWeight("bold").setBackground("#6366f1").setFontColor("#ffffff");
+      }
+    }
+
+    // 3. Setup Sheet User
+    var sheetUser = ss.getSheetByName("User");
+    if (!sheetUser) {
+      sheetUser = ss.insertSheet("User");
+    }
+
+    if (sheetUser.getLastRow() === 0) {
+      sheetUser.appendRow(["Nama", "Password", "Role", "Lat Custom", "Lng Custom", "Radius Custom"]);
+      var headerUser = sheetUser.getRange(1, 1, 1, 6);
+      headerUser.setFontWeight("bold")
+                    .setBackground("#10b981")
+                    .setFontColor("#ffffff");
+      sheetUser.setFrozenRows(1);
+
+      // Data Akun Default
+      sheetUser.appendRow(["Nevi", "123456", "Guru", "", "", ""]);
+      sheetUser.appendRow(["Ahmad", "123456", "Staf TU", "", "", ""]);
+      sheetUser.appendRow(["Admin", "admin123", "Kepala Sekolah", "", "", ""]);
+    }
+
+    // 4. Setup Sheet Ijin
+    var sheetIjin = ss.getSheetByName("Ijin");
+    if (!sheetIjin) {
+      sheetIjin = ss.insertSheet("Ijin");
+    }
+
+    if (sheetIjin.getLastRow() === 0) {
+      sheetIjin.appendRow(["Tanggal & Waktu Pengajuan", "ID / Nama User", "Tipe Ijin", "Keterangan", "Link Foto Drive", "Status Approval", "Tanggal Ijin"]);
+      var headerIjin = sheetIjin.getRange(1, 1, 1, 7);
+      headerIjin.setFontWeight("bold")
+                .setBackground("#f59e0b")
+                .setFontColor("#ffffff");
+      sheetIjin.setFrozenRows(1);
+    }
     
-    var driveFile = folder.createFile(blob);
-    driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    var photoUrl = driveFile.getUrl();
-
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-    var sheet = ss.getSheetByName("Ijin");
-    if (!sheet) {
-      initialSetup();
-      sheet = ss.getSheetByName("Ijin");
-    }
-
-    var tglIjinStr = tanggalIjin || Utilities.formatDate(now, globalConfig.TIMEZONE, "yyyy-MM-dd");
-
-    sheet.appendRow([
-      timeFormatted,
-      userId,
-      tipeIjin,
-      keterangan || "-",
-      photoUrl,
-      "Menunggu Approval",
-      tglIjinStr
-    ]);
-
-    return {
-      success: true,
-      message: "Permohonan " + tipeIjin + " berhasil diajukan! Menunggu persetujuan Admin."
-    };
-
+    Logger.log("✅ Inisialisasi & Safe Migrate Sheet Config, Absensi, User, & Ijin BERHASIL!");
   } catch (err) {
-    return { success: false, message: "Gagal mengajukan ijin: " + err.message };
-  }
-}
-
-/**
- * Mengambil Rekap Data Ijin (User / All)
- */
-function handleGetIjinData(filterUserId) {
-  try {
-    var globalConfig = getConfig();
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-    var sheet = ss.getSheetByName("Ijin");
-
-    if (!sheet) return { success: true, data: [] };
-
-    var data = sheet.getDataRange().getValues();
-    if (data.length <= 1) return { success: true, data: [] };
-
-    var list = [];
-    for (var i = 1; i < data.length; i++) {
-      var row = data[i];
-      var rawTime = row[0];
-      var formattedTime = rawTime;
-      if (rawTime instanceof Date) {
-        formattedTime = Utilities.formatDate(rawTime, globalConfig.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
-      } else {
-        formattedTime = String(rawTime);
-      }
-
-      var rowNama = String(row[1]);
-
-      if (!filterUserId || filterUserId === "ALL" || rowNama.toLowerCase() === String(filterUserId).toLowerCase()) {
-        list.push({
-          waktu: formattedTime,
-          nama: rowNama,
-          tipeIjin: String(row[2]),
-          keterangan: String(row[3]),
-          fotoUrl: String(row[4]),
-          status: String(row[5] || "Menunggu Approval"),
-          tanggalIjin: String(row[6] || formattedTime.split(" ")[0])
-        });
-      }
-    }
-
-    list.reverse(); // Urutan terbaru di atas
-    return { success: true, data: list };
-
-  } catch (err) {
-    return { success: false, message: "Gagal mengambil data ijin: " + err.message };
-  }
-}
-
-/**
- * Modul Approval Admin (Setujui / Tolak Ijin Guru)
- */
-function handleUpdateIjinStatus(waktu, nama, newStatus) {
-  try {
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-    var sheet = ss.getSheetByName("Ijin");
-    if (!sheet) return { success: false, message: "Sheet 'Ijin' tidak ditemukan!" };
-
-    var data = sheet.getDataRange().getValues();
-    var targetNama = String(nama).trim().toLowerCase();
-    var targetWaktu = String(waktu).trim();
-
-    for (var i = 1; i < data.length; i++) {
-      var rowWaktu = data[i][0];
-      var rowNama = String(data[i][1]).trim().toLowerCase();
-
-      var formattedRowWaktu = rowWaktu;
-      if (rowWaktu instanceof Date) {
-        var globalConfig = getConfig();
-        formattedRowWaktu = Utilities.formatDate(rowWaktu, globalConfig.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
-      } else {
-        formattedRowWaktu = String(rowWaktu).trim();
-      }
-
-      if (rowNama === targetNama && formattedRowWaktu === targetWaktu) {
-        sheet.getRange(i + 1, 6).setValue(newStatus); // Update Kolom F (Status Approval)
-        return {
-          success: true,
-          message: "Permohonan ijin " + nama + " berhasil diperbarui menjadi '" + newStatus + "'."
-        };
-      }
-    }
-
-    return { success: false, message: "Data permohonan ijin tidak ditemukan!" };
-
-  } catch (err) {
-    return { success: false, message: "Gagal memperbarui status ijin: " + err.message };
-  }
-}
-
-function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
-  var R = 6371000;
-  var dLat = (lat2 - lat1) * Math.PI / 180;
-  var dLon = (lon2 - lon1) * Math.PI / 180;
-  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-          Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function handleGetAttendanceData() {
-  try {
-    var globalConfig = getConfig();
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-    var sheet = ss.getSheetByName("Absensi");
-
-    if (!sheet) {
-      return { success: true, data: [] };
-    }
-
-    var data = sheet.getDataRange().getValues();
-    if (data.length <= 1) {
-      return { success: true, data: [] };
-    }
-
-    var list = [];
-    for (var i = 1; i < data.length; i++) {
-      var row = data[i];
-      var rawTime = row[0];
-      var formattedTime = rawTime;
-      
-      if (rawTime instanceof Date) {
-        formattedTime = Utilities.formatDate(rawTime, globalConfig.TIMEZONE, "yyyy-MM-dd HH:mm:ss");
-      } else {
-        formattedTime = String(rawTime);
-      }
-
-      list.push({
-        waktu: formattedTime,
-        nama: String(row[1]),
-        tipe: String(row[2]),
-        gps: String(row[3]),
-        fotoUrl: String(row[4])
-      });
-    }
-
-    return { success: true, data: list };
-
-  } catch (err) {
-    return { success: false, message: "Gagal mengambil data rekap: " + err.message };
+    Logger.log("❌ Gagal melakukan setup: " + err.message);
   }
 }
