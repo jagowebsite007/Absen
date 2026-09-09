@@ -90,7 +90,7 @@
 
     .title-header {
       text-align: center;
-      margin-bottom: 18px;
+      margin-bottom: 22px;
     }
 
     .title-header h1 {
@@ -104,15 +104,6 @@
       font-size: 12px;
       color: #9ca3af;
       margin-top: 4px;
-    }
-
-    .config-box {
-      background: rgba(99, 102, 241, 0.08);
-      border: 1px dashed rgba(99, 102, 241, 0.35);
-      border-radius: 14px;
-      padding: 12px;
-      margin-bottom: 16px;
-      font-size: 11px;
     }
 
     .form-group {
@@ -201,13 +192,13 @@
       background: rgba(245, 158, 11, 0.15);
       color: #fbbf24;
       border: 1px solid rgba(245, 158, 11, 0.3);
-      padding: 8px;
+      padding: 10px;
       width: 100%;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 11px;
       font-weight: 700;
       cursor: pointer;
-      margin-top: 8px;
+      margin-top: 12px;
     }
 
     .bento-card {
@@ -431,17 +422,6 @@
       font-size: 12px;
     }
 
-    .alert-banner {
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.4);
-      color: #f87171;
-      padding: 8px 10px;
-      border-radius: 10px;
-      font-size: 11px;
-      margin-bottom: 12px;
-      display: none;
-    }
-
     .hidden { display: none !important; }
   </style>
 </head>
@@ -456,13 +436,6 @@
   </div>
 
   <div class="main-panel">
-    
-    <!-- Konfigurasi URL WebApp GAS API -->
-    <div class="config-box">
-      <label style="color:#818cf8; font-weight:bold;">URL WebApp Apps Script (GAS API):</label>
-      <input type="text" id="gasApiUrl" class="form-control" style="font-size:10px; margin-top:4px;" placeholder="https://script.google.com/macros/s/.../exec" oninput="validateApiUrlInput()">
-      <div id="apiUrlError" class="alert-banner" style="margin-top: 6px; margin-bottom: 0;"></div>
-    </div>
 
     <!-- 1. VIEW LOGIN -->
     <div id="viewLogin">
@@ -709,6 +682,9 @@
 <div id="toast" class="toast">Notifikasi...</div>
 
 <script>
+  // URL WebApp Google Apps Script default (silakan ganti dengan URL WebApp /exec milik Anda jika dipublikasikan)
+  var DEFAULT_GAS_API_URL = "https://script.google.com/macros/s/AKfycbx.../exec";
+
   var currentUser = null;
   var currentCoords = "";
   var selfieData = "";
@@ -725,35 +701,17 @@
   var todayStatus = { hasCheckedIn: false, hasCheckedOut: false };
 
   window.onload = function() {
-    var savedUrl = localStorage.getItem('gas_api_url');
-    if (savedUrl) {
-      document.getElementById('gasApiUrl').value = savedUrl;
-      validateApiUrlInput();
-    }
     document.getElementById('ijinTanggal').value = new Date().toISOString().slice(0, 10);
     initGeolocation();
     initClock();
   };
 
-  function validateApiUrlInput() {
-    var input = document.getElementById('gasApiUrl');
-    var errBox = document.getElementById('apiUrlError');
-    var url = input.value.trim();
-
-    if (!url) { errBox.style.display = 'none'; return true; }
-    if (url.includes('/edit') || url.includes('/home') || url.includes('/d/')) {
-      errBox.innerText = "⚠️ URL Salah! Gunakan WebApp URL berakhiran '/exec' dari menu Deploy > New Deployment.";
-      errBox.style.display = 'block';
-      return false;
-    }
-    errBox.style.display = 'none';
-    localStorage.setItem('gas_api_url', url);
-    return true;
-  }
-
   function getApiUrl() {
-    var urlInput = document.getElementById('gasApiUrl');
-    return urlInput ? urlInput.value.trim() : "";
+    var savedUrl = localStorage.getItem('gas_api_url');
+    if (savedUrl && savedUrl.trim() !== "") {
+      return savedUrl.trim();
+    }
+    return DEFAULT_GAS_API_URL.trim();
   }
 
   function callGasApi(action, payload, callback) {
@@ -763,8 +721,8 @@
     }
 
     var apiUrl = getApiUrl();
-    if (!apiUrl) {
-      showToast("⚠️ Masukkan URL WebApp Apps Script terlebih dahulu!");
+    if (!apiUrl || apiUrl.includes("...")) {
+      showToast("⚠️ URL WebApp belum dikonfigurasi! Buka file index.html dan set DEFAULT_GAS_API_URL.");
       return;
     }
 
@@ -917,11 +875,9 @@
     document.getElementById('btnTabIjinForm').className = "btn-tab " + (tab === 'ijinForm' ? 'active' : '');
     document.getElementById('btnTabIjinHist').className = "btn-tab " + (tab === 'ijinHist' ? 'active' : '');
 
-    // Sembunyikan semua modul Admin
     document.getElementById('secAdminRecap').classList.add('hidden');
     document.getElementById('secAdminIjin').classList.add('hidden');
 
-    // Tampilkan modul Guru yang dipilih
     document.getElementById('secAbsen').classList.toggle('hidden', tab !== 'absen');
     document.getElementById('secIjinForm').classList.toggle('hidden', tab !== 'ijinForm');
     document.getElementById('secIjinHist').classList.toggle('hidden', tab !== 'ijinHist');
@@ -936,12 +892,10 @@
     document.getElementById('btnTabAdminRecap').className = "btn-tab " + (tab === 'recap' ? 'active' : '');
     document.getElementById('btnTabAdminIjin').className = "btn-tab " + (tab === 'ijinApproval' ? 'active' : '');
 
-    // Sembunyikan seluruh modul Guru (Kamera Selfie, Form Ijin, & Riwayat Guru)
     document.getElementById('secAbsen').classList.add('hidden');
     document.getElementById('secIjinForm').classList.add('hidden');
     document.getElementById('secIjinHist').classList.add('hidden');
 
-    // Tampilkan modul Admin yang dipilih
     document.getElementById('secAdminRecap').classList.toggle('hidden', tab !== 'recap');
     document.getElementById('secAdminIjin').classList.toggle('hidden', tab !== 'ijinApproval');
 
