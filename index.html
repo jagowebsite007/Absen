@@ -481,6 +481,7 @@
       </form>
 
       <button type="button" onclick="useDemoLogin()" class="btn-demo">💡 Mode Uji Coba Lintas Browser (Tanpa GAS)</button>
+      <button type="button" onclick="openApiModal()" class="btn-secondary" style="width: 100%; margin-top: 8px;">⚙️ Pengaturan URL GAS API</button>
     </div>
 
     <!-- 2. VIEW DASHBOARD -->
@@ -710,6 +711,24 @@
 
 <div id="toast" class="toast">Notifikasi...</div>
 
+<!-- MODAL PENGATURAN URL API -->
+<div id="modalApi" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px;">
+  <div style="background: #0f172a; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 20px; width: 100%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+    <h3 style="font-size: 16px; font-weight: 800; color: #ffffff; margin-bottom: 8px;">⚙️ Konfigurasi GAS API URL</h3>
+    <p style="font-size: 11px; color: #9ca3af; margin-bottom: 14px; line-height: 1.4;">
+      Masukkan Web App URL yang Anda dapatkan dari <strong>Google Apps Script (Deploy &gt; Web App)</strong>.
+    </p>
+    <div class="form-group">
+      <label>Web App Exec URL</label>
+      <input type="text" id="inputGasUrl" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 16px;">
+      <button type="button" onclick="closeApiModal()" class="btn-secondary" style="flex: 1;">Batal</button>
+      <button type="button" onclick="saveApiUrl()" class="btn-primary" style="flex: 1;">Simpan URL</button>
+    </div>
+  </div>
+</div>
+
 <script>
   var DEFAULT_GAS_API_URL = "https://script.google.com/macros/s/AKfycbx.../exec";
 
@@ -733,6 +752,27 @@
     initGeolocation();
     initClock();
   };
+
+  function openApiModal() {
+    var currentUrl = localStorage.getItem('gas_api_url') || DEFAULT_GAS_API_URL;
+    document.getElementById('inputGasUrl').value = currentUrl.includes('...') ? '' : currentUrl;
+    document.getElementById('modalApi').classList.remove('hidden');
+  }
+
+  function closeApiModal() {
+    document.getElementById('modalApi').classList.add('hidden');
+  }
+
+  function saveApiUrl() {
+    var url = document.getElementById('inputGasUrl').value.trim();
+    if (!url || !url.startsWith("https://script.google.com/macros/s/")) {
+      showToast("⚠️ Masukkan URL Web App Google Apps Script yang valid!");
+      return;
+    }
+    localStorage.setItem('gas_api_url', url);
+    closeApiModal();
+    showToast("✅ URL API Berhasil Disimpan!");
+  }
 
   function getApiUrl() {
     var savedUrl = localStorage.getItem('gas_api_url');
